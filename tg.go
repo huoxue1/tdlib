@@ -273,7 +273,7 @@ type MyStore struct {
 func (m *MyStore) LoadSession(ctx context.Context) ([]byte, error) {
 	data, err := m.Db.Load("tg_session")
 	if err != nil {
-		return nil, err
+		return []byte(""), nil
 	}
 	return []byte(data), err
 }
