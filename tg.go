@@ -122,6 +122,9 @@ func Init(ctx context.Context, appID int, appHash string, proxy string) error {
 
 		channels[c.Channel.ID] = c.Channel.AccessHash
 		handlerMap.Range(func(key, value any) bool {
+			defer func() {
+				_ = recover()
+			}()
 			handle := value.(*Matcher)
 			for _, rule := range handle.Rules {
 				if !rule(c) {

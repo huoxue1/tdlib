@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -36,8 +37,9 @@ func init() {
 }
 
 func init() {
-	tdlib.NewPlugin("test", tdlib.OnlySelf()).OnCommand("test1").Handle(func(ctx *tdlib.Context) {
-		log.Infoln("测试插件成功")
+	tdlib.NewPlugin("echo", tdlib.OnlySelf()).OnCommand("echo").Handle(func(ctx *tdlib.Context) {
+		_ = ctx.EditMessage("echo成功")
+		time.Sleep(time.Second * 5)
 		ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
 	})
 }

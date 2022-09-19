@@ -14,6 +14,8 @@ type Api interface {
 	SendText(msg string, reply int) error
 	SendPrivateMsg(id int64, msg string, reply int) error
 	SendChannelMsg(id int64, msg string, reply int) error
+	EditMessage(msg string) error
+	DeleteMsg(flag bin.Fields, channelID int64, ids ...int)
 }
 
 func (c *Context) SendText(msg string, reply int) error {
@@ -92,6 +94,7 @@ func (c *Context) DeleteMsg(flag bin.Fields, channelID int64, ids ...int) {
 
 	resolvedPeer, err := c.Client.ChannelsGetChannels(c, []tg.InputChannelClass{&tg.InputChannel{ChannelID: channelID}})
 	if err != nil {
+		log.Errorln(err.Error())
 		return
 	}
 
@@ -105,6 +108,7 @@ func (c *Context) DeleteMsg(flag bin.Fields, channelID int64, ids ...int) {
 			ID: ids,
 		})
 		if err != nil {
+			log.Errorln(err.Error())
 			return
 		}
 		log.Infoln(affectedMessages)
