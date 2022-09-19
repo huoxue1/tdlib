@@ -44,6 +44,4 @@ js_config:
       Script: jd_wxCartKoi.js
       TimeOut: 0
 
-
-update_url: https://raw.githubusercontent.com/xieshang/AutoSpy/master/updatelist.json
 ```
