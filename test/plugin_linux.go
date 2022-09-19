@@ -11,9 +11,9 @@ import (
 func init() {
 	pluginsFiles := GetPluginsFiles()
 	for _, file := range pluginsFiles {
-
+		_, _ = plugin.Open(file)
 	}
-	plugin.Open("")
+
 }
 
 func GetPluginsFiles() []string {
@@ -26,6 +26,7 @@ func GetPluginsFiles() []string {
 		if !info.IsDir() && strings.HasSuffix(path, "so") {
 			datas = append(datas, path)
 		}
+		return nil
 	})
 	return datas
 }
