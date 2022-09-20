@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 
-	"github.com/huoxue1/tdlib"
+	"github.com/huoxue1/tdlib/lib"
 )
 
 type Ql struct {
@@ -20,7 +20,7 @@ type Ql struct {
 
 	token   string
 	c       *req.Client
-	storage *tdlib.MyDB
+	storage *lib.MyDB
 	header  map[string]string
 }
 
@@ -59,7 +59,7 @@ type Env struct {
 
 func InitQl(api, clientID, clientSecret string) *Ql {
 	q := new(Ql)
-	db, _ := tdlib.InitDB()
+	db, _ := lib.InitDB()
 	q.storage = db
 	q.c = req.C()
 	q.Api = api

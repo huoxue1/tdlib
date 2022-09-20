@@ -8,9 +8,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/huoxue1/tdlib"
-	conf2 "github.com/huoxue1/tdlib/test/conf"
-	"github.com/huoxue1/tdlib/test/utils"
+	conf2 "github.com/huoxue1/tdlib/conf"
+	"github.com/huoxue1/tdlib/lib"
+	"github.com/huoxue1/tdlib/utils"
 )
 
 var (
@@ -44,7 +44,7 @@ type Task struct {
 }
 
 func init() {
-	tdlib.OnConnect(func(ctx *tdlib.Context) {
+	lib.OnConnect(func(ctx *lib.Context) {
 		log.Infoln("tdlib已连接成功！")
 		conf := conf2.GetConfig()
 		for i, s := range conf.QingLong {
@@ -103,7 +103,7 @@ func init() {
 			}
 			tasks = append(tasks, t)
 
-			go func(ctx2 *tdlib.Context, task *Task) {
+			go func(ctx2 *lib.Context, task *Task) {
 				for {
 					_ = <-task.ch
 					task.wait--
@@ -160,8 +160,8 @@ func init() {
 		}
 	})
 
-	tdlib.NewPlugin("export", tdlib.OnlyChannels(conf2.GetConfig().Telegram.ListenCH...)).OnRegex(`export\s(.*?)="(.*?)"`).Handle(exportHandler)
-	tdlib.NewPlugin("check_task", tdlib.OnlySelf()).OnCommand("check_task").Handle(func(ctx *tdlib.Context) {
+	lib.NewPlugin("export", lib.OnlyChannels(conf2.GetConfig().Telegram.ListenCH...)).OnRegex(`export\s(.*?)="(.*?)"`).Handle(exportHandler)
+	lib.NewPlugin("check_task", lib.OnlySelf()).OnCommand("check_task").Handle(func(ctx *lib.Context) {
 		msg := ""
 		for _, task := range tasks {
 			msg += fmt.Sprintf("\n%v,%d/%d\n", task.Name, task.wait, task.total)
@@ -172,7 +172,7 @@ func init() {
 	})
 }
 
-func exportHandler(ctx *tdlib.Context) {
+func exportHandler(ctx *lib.Context) {
 	var exports []map[string]string
 	msg := "检测到变量"
 	for _, matcher := range ctx.RegexMatchers {

@@ -1,4 +1,4 @@
-package tdlib
+package lib
 
 import (
 	"math/rand"

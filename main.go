@@ -10,10 +10,10 @@ import (
 
 	nested "github.com/Lyrics-you/sail-logrus-formatter/sailor"
 
-	"github.com/huoxue1/tdlib"
-	"github.com/huoxue1/tdlib/test/conf"
+	_ "github.com/huoxue1/tdlib/plugins/task"
 
-	_ "github.com/huoxue1/tdlib/test/plugins/task"
+	"github.com/huoxue1/tdlib/conf"
+	"github.com/huoxue1/tdlib/lib"
 )
 
 func init() {
@@ -37,7 +37,7 @@ func init() {
 }
 
 func init() {
-	tdlib.NewPlugin("echo", tdlib.OnlySelf()).OnCommand("echo").Handle(func(ctx *tdlib.Context) {
+	lib.NewPlugin("echo", lib.OnlySelf()).OnCommand("echo").Handle(func(ctx *lib.Context) {
 		_ = ctx.EditMessage("echo成功")
 		time.Sleep(time.Second * 5)
 		ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
@@ -48,7 +48,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	config := conf.GetConfig()
-	if err := tdlib.Init(ctx, config.Telegram.ApiId, config.Telegram.ApiHash, config.Telegram.ProxyURL); err != nil {
+	if err := lib.Init(ctx, config.Telegram.ApiId, config.Telegram.ApiHash, config.Telegram.ProxyURL); err != nil {
 		panic(err)
 	}
 }

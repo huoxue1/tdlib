@@ -6,12 +6,15 @@ import (
 	"path/filepath"
 	"plugin"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func init() {
 	pluginsFiles := GetPluginsFiles()
 	for _, file := range pluginsFiles {
 		_, _ = plugin.Open(file)
+		log.Infoln("已加载动态插件" + file)
 	}
 
 }
@@ -22,7 +25,7 @@ func GetPluginsFiles() []string {
 		return []string{}
 	}
 	var datas []string
-	filepath.Walk("./plugins", func(path string, info fs.FileInfo, err error) error {
+	filepath.Walk(".", func(path string, info fs.FileInfo, err error) error {
 		if !info.IsDir() && strings.HasSuffix(path, "so") {
 			datas = append(datas, path)
 		}

@@ -7,12 +7,12 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/huoxue1/tdlib"
-	"github.com/huoxue1/tdlib/test/utils"
+	"github.com/huoxue1/tdlib/lib"
+	"github.com/huoxue1/tdlib/utils"
 )
 
 func init() {
-	tdlib.NewPlugin("bean", tdlib.OnlySelf()).OnCommand("豆").Handle(func(ctx *tdlib.Context) {
+	lib.NewPlugin("bean", lib.OnlySelf()).OnCommand("豆").Handle(func(ctx *lib.Context) {
 		index := 1
 		if len(ctx.Args) > 0 {
 			i, _ := strconv.Atoi(ctx.Args[0])
