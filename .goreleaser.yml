@@ -6,7 +6,6 @@ before:
 builds:
 
   - id: nowin
-    main: ./test
     env:
       - CGO_ENABLED=0
       - GO111MODULE=on
@@ -33,7 +32,6 @@ builds:
     ldflags:
       - -s -w -X main.VERSION=v{{.Version}}
   - id: win
-    main: ./test
     env:
       - CGO_ENABLED=0
       - GO111MODULE=on
