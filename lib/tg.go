@@ -127,11 +127,28 @@ func Init(ctx context.Context, appID int, appHash string, proxy string) error {
 			}()
 			handle := value.(*Matcher)
 			for _, rule := range handle.Rules {
-				if !rule(c) {
+				handleRule := func(rule2 Rule) bool {
+					defer func() {
+						err := recover()
+						if err != nil {
+							log.Errorln("处理事件过程异常")
+							log.Errorln(err)
+						}
+					}()
+					return rule2(c)
+				}
+				if !handleRule(rule) {
 					return true
 				}
 			}
 			go func() {
+				defer func() {
+					err := recover()
+					if err != nil {
+						log.Errorln("处理事件过程异常")
+						log.Errorln(err)
+					}
+				}()
 				log.Infoln("handle the matcher " + key.(string))
 				handle.Handler(c)
 			}()
@@ -165,11 +182,28 @@ func Init(ctx context.Context, appID int, appHash string, proxy string) error {
 		handlerMap.Range(func(key, value any) bool {
 			handle := value.(*Matcher)
 			for _, rule := range handle.Rules {
-				if !rule(c) {
+				handleRule := func(rule2 Rule) bool {
+					defer func() {
+						err := recover()
+						if err != nil {
+							log.Errorln("处理事件过程异常")
+							log.Errorln(err)
+						}
+					}()
+					return rule2(c)
+				}
+				if !handleRule(rule) {
 					return true
 				}
 			}
 			go func() {
+				defer func() {
+					err := recover()
+					if err != nil {
+						log.Errorln("处理事件过程异常")
+						log.Errorln(err)
+					}
+				}()
 				log.Infoln("handle the matcher " + key.(string))
 				handle.Handler(c)
 			}()

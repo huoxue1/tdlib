@@ -78,6 +78,7 @@ func (c *Context) EditMessage(msg string) error {
 }
 
 func (c *Context) DeleteMsg(flag bin.Fields, channelID int64, ids ...int) {
+
 	resp, err := c.Client.MessagesDeleteMessages(c, &tg.MessagesDeleteMessagesRequest{
 		Flags:  flag,
 		Revoke: true,
@@ -114,4 +115,42 @@ func (c *Context) DeleteMsg(flag bin.Fields, channelID int64, ids ...int) {
 		log.Infoln(affectedMessages)
 	}
 	log.Infoln(resp)
+}
+
+func (c *Context) GetMsg(channelID int64, msgID int) tg.MessagesMessagesClass {
+	if channelID != 0 {
+		messages, err := c.Client.ChannelsGetMessages(c, &tg.ChannelsGetMessagesRequest{
+			Channel: &tg.InputChannel{
+				ChannelID:  channelID,
+				AccessHash: c.GetChannel(channelID).AccessHash,
+			},
+			ID: []tg.InputMessageClass{&tg.InputMessageID{
+				ID: msgID,
+			}},
+		})
+		if err != nil {
+			return nil
+		}
+		return messages
+
+	} else {
+		messages, err := c.Client.MessagesGetMessages(c, []tg.InputMessageClass{&tg.InputMessageID{
+			ID: msgID,
+		}})
+		if err != nil {
+			return nil
+		}
+		return messages
+	}
+}
+
+func (c *Context) GetChannel(channelID int64) *tg.Channel {
+	resolvedPeer, err := c.Client.ChannelsGetChannels(c, []tg.InputChannelClass{&tg.InputChannel{ChannelID: channelID}})
+	if err != nil {
+		log.Errorln(err.Error())
+		return nil
+	}
+
+	channel := resolvedPeer.(*tg.MessagesChats).Chats[0].(*tg.Channel)
+	return channel
 }

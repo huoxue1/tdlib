@@ -48,5 +48,6 @@ func init() {
 		_ = ctx.EditMessage(msg)
 		time.Sleep(time.Second * 5)
 		ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
+		_ = ctx.EditMessage("豆")
 	})
 }
