@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	Aauthentication string `json:"Aauthentication"  mapstructure:"Aauthentication"`
+	Aauthentication string `json:"Aauthentication"   mapstructure:"Aauthentication"`
 	AutoRestart     string `json:"AutoRestart" mapstructure:"AutoRestart"`
 	ContainerWait   int    `json:"Container_Wait" mapstructure:"Container_Wait"`
 	LogEnable       bool   `json:"LogEnable" mapstructure:"LogEnable"`
@@ -35,22 +35,24 @@ type Config struct {
 		MasterId         []int64  `json:"master_id" mapstructure:"master_id"`
 		ProxyURL         string   `json:"proxy_url" mapstructure:"proxy_url"`
 	} `json:"Telegram" mapstructure:"Telegram"`
-	UseSillyGirl bool   `json:"Use_SillyGirl" mapstructure:"Use_SillyGirl"`
-	WaitTime     int    `json:"WaitTime" mapstructure:"WaitTime"`
-	Branch       string `json:"branch" mapstructure:"branch"`
-	DownProxy    string `json:"down_proxy" mapstructure:"down_proxy"`
-	JsConfig     []struct {
-		Container   []int    `json:"Container" mapstructure:"Container"`
-		Env         string   `json:"Env" mapstructure:"Env"`
-		KeyWord     []string `json:"KeyWord" mapstructure:"KeyWord"`
-		Name        string   `json:"Name" mapstructure:"Name"`
-		Script      string   `json:"Script" mapstructure:"Script"`
-		TimeOut     int      `json:"TimeOut" mapstructure:"TimeOut"`
-		Wait        int      `json:"Wait" mapstructure:"Wait"`
-		OverdueTime int      `json:"OverdueTime,omitempty" mapstructure:"OverdueTime,omitempty"`
-		Disable     bool     `json:"Disable,omitempty" mapstructure:"Disable,omitempty"`
-	} `json:"js_config" mapstructure:"js_config"`
-	UpdateUrl string `json:"update_url" mapstructure:"update_url"`
+	UseSillyGirl bool          `json:"Use_SillyGirl" mapstructure:"Use_SillyGirl"`
+	WaitTime     int           `json:"WaitTime" mapstructure:"WaitTime"`
+	Branch       string        `json:"branch" mapstructure:"branch"`
+	DownProxy    string        `json:"down_proxy" mapstructure:"down_proxy"`
+	JsConfig     []*TaskConfig `json:"js_config" mapstructure:"js_config"`
+	UpdateUrl    string        `json:"update_url" mapstructure:"update_url"`
+}
+
+type TaskConfig struct {
+	Container   []int    `json:"Container"   mapstructure:"Container" yaml:"Container"`
+	Env         string   `json:"Env" mapstructure:"Env" yaml:"Env"`
+	KeyWord     []string `json:"KeyWord" mapstructure:"KeyWord" yaml:"KeyWord"`
+	Name        string   `json:"Name" mapstructure:"Name" yaml:"Name"`
+	Script      string   `json:"Script" mapstructure:"Script" yaml:"Script"`
+	TimeOut     int      `json:"TimeOut" mapstructure:"TimeOut" yaml:"TimeOut"`
+	Wait        int      `json:"Wait" mapstructure:"Wait" yaml:"Wait"`
+	OverdueTime int      `json:"OverdueTime,omitempty" mapstructure:"OverdueTime,omitempty" yaml:"OverdueTime,omitempty"`
+	Disable     int      `json:"Disable,omitempty" mapstructure:"Disable,omitempty" yaml:"Disable,omitempty"`
 }
 
 var (
@@ -81,8 +83,32 @@ func InitConfig() {
 			return
 		}
 		config = c
+		file, err := os.ReadFile("task.yaml")
+		if err != nil {
+			log.Errorln("任务配置文件task.json不存在" + err.Error())
+			return
+		}
+		err = yaml.Unmarshal(file, &c.JsConfig)
+		if err != nil {
+			log.Errorln("解析task.yaml失败" + err.Error())
+			return
+		}
+		config = c
+
 	})
 
+}
+
+func SaveTask(tasks []*TaskConfig) error {
+	data, err := yaml.Marshal(&tasks)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile("task.yaml", data, 0666)
+	if err != nil {
+		return err
+	}
+	return err
 }
 
 func GetConfig() *Config {

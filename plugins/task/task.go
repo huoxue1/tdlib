@@ -50,6 +50,52 @@ func init() {
 	lib.NewPlugin("check_task", lib.OnlySelf()).OnCommand("check_task", "检查任务").Handle(checkTaskHandler)
 	lib.NewPlugin("disable_task", lib.OnlySelf()).OnCommand("disable_task", "禁用任务").Handle(disableTaskHandler)
 	lib.NewPlugin("enable_task", lib.OnlySelf()).OnCommand("disable_task", "启用任务").Handle(enableTaskHandler)
+	lib.NewPlugin("add_task", lib.OnlySelf()).OnCommand("add_task", "添加任务").Handle(addTaskHandler)
+}
+
+func addTaskHandler(ctx *lib.Context) {
+	propomts := []string{
+		"请输入任务名称", "请输入变量名称", "请输入关键字", "请输入脚本名称",
+	}
+	var values []string
+	for _, propomt := range propomts {
+		_ = ctx.EditMessage(propomt)
+		message, err := ctx.GetEvent()
+		if err != nil {
+			_ = ctx.EditMessage("等待消息超时" + err.Error())
+			return
+		}
+		values = append(values, message.Message)
+	}
+	task := new(conf2.TaskConfig)
+	task.Name = values[0]
+	task.Env = values[1]
+	task.KeyWord = strings.Split(values[2], " ")
+	task.Script = values[3]
+	task.Container = []int{1}
+	taskConfigs := conf2.GetConfig().JsConfig
+	taskConfigs = append(taskConfigs, task)
+	err := conf2.SaveTask(taskConfigs)
+	if err != nil {
+		log.Errorln("保存数据失败")
+		return
+	}
+	t := &Task{
+		Env:       task.Env,
+		KeyWords:  task.KeyWord,
+		Script:    task.Script,
+		Name:      task.Name,
+		TimeOut:   0,
+		Disable:   false,
+		cronID:    make(map[int]int, 5),
+		ch:        make(chan int, 20),
+		total:     0,
+		wait:      0,
+		oldExport: []string{},
+	}
+	tasks = append(tasks, t)
+	go runTask(ctx, t)
+	_ = ctx.EditMessage("成功添加任务" + t.Name)
 }
 
 func enableTaskHandler(ctx *lib.Context) {
@@ -145,7 +191,7 @@ func connectHandler(ctx *lib.Context) {
 			Script:    s.Script,
 			Name:      s.Name,
 			TimeOut:   s.TimeOut,
-			Disable:   s.Disable,
+			Disable:   s.Disable == 1,
 			cronID:    make(map[int]int, 5),
 			ch:        make(chan int, 20),
 			total:     0,
@@ -185,61 +231,68 @@ func connectHandler(ctx *lib.Context) {
 			t.Disable = true
 			log.Warningln("已禁用任务 " + t.Name)
 		}
+		go runTask(ctx, t)
+	}
+}
 
-		go func(ctx2 *lib.Context, task *Task) {
-			for {
-				_ = <-task.ch
-				task.wait--
-				log.Infoln("开始执行任务" + task.Name)
+// runTask
+/* @Description: 循环等待任务
+*  @param ctx2
+*  @param task
+ */
+func runTask(ctx2 *lib.Context, task *Task) {
+	conf := conf2.GetConfig()
+	for {
+		_ = <-task.ch
+		task.wait--
+		log.Infoln("开始执行任务" + task.Name)
 
-				for i, id := range task.cronID {
-					err := ctx2.SendChannelMsg(conf.Telegram.LogId, "开始执行任务"+task.Name, 0)
-					if err != nil {
-						log.Errorln("发送通知失败" + err.Error())
-						return
-					}
-					ql := qlMap[i]
-					err = ql.QL.RunCrons(id)
-					if err != nil {
-						log.Errorln("执行定时任务异常" + err.Error())
-						continue
-					}
-					start := time.Now()
-					c := make(chan int, 1)
-					id := id
-					go func() {
-						for true {
-							cron, err := ql.QL.GetCron(id)
-							if err != nil {
-								log.Errorln("获取定时任务状态异常" + err.Error())
-								c <- 0
-								return
-							}
-							if cron.Status == 1 {
-								log.Infoln("任务执行结束")
-								c <- 1
-								return
-							}
-							time.Sleep(time.Second * 5)
-						}
-					}()
-
-					after := time.After(time.Minute * 5)
-					select {
-					case <-after:
-						log.Errorln("任务执行超时")
-					case <-c:
-						log.Infoln("任务执行完成")
-					}
-					err = ctx2.SendChannelMsg(conf.Telegram.LogId, fmt.Sprintf("%v任务执行完成，用时%.2f秒", task.Name, time.Now().Sub(start).Seconds()), 0)
-					if err != nil {
-						log.Errorln("发送通知失败" + err.Error())
-						return
-					}
-				}
-				time.Sleep(1 * time.Minute)
+		for i, id := range task.cronID {
+			err := ctx2.SendChannelMsg(conf.Telegram.LogId, "开始执行任务"+task.Name, 0)
+			if err != nil {
+				log.Errorln("发送通知失败" + err.Error())
+				return
 			}
-		}(ctx, t)
+			ql := qlMap[i]
+			err = ql.QL.RunCrons(id)
+			if err != nil {
+				log.Errorln("执行定时任务异常" + err.Error())
+				continue
+			}
+			start := time.Now()
+			c := make(chan int, 1)
+			id := id
+			go func() {
+				for true {
+					cron, err := ql.QL.GetCron(id)
+					if err != nil {
+						log.Errorln("获取定时任务状态异常" + err.Error())
+						c <- 0
+						return
+					}
+					if cron.Status == 1 {
+						log.Infoln("任务执行结束")
+						c <- 1
+						return
+					}
+					time.Sleep(time.Second * 5)
+				}
+			}()
+
+			after := time.After(time.Minute * 5)
+			select {
+			case <-after:
+				log.Errorln("任务执行超时")
+			case <-c:
+				log.Infoln("任务执行完成")
+			}
+			err = ctx2.SendChannelMsg(conf.Telegram.LogId, fmt.Sprintf("%v任务执行完成，用时%.2f秒", task.Name, time.Now().Sub(start).Seconds()), 0)
+			if err != nil {
+				log.Errorln("发送通知失败" + err.Error())
+				return
+			}
+		}
+		time.Sleep(1 * time.Minute)
 	}
 }
 
