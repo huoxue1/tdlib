@@ -18,16 +18,16 @@ type Api interface {
 	DeleteMsg(flag bin.Fields, channelID int64, ids ...int)
 }
 
-func (c *Context) SendText(msg string, reply int) error {
-	if c.MessageType == MESSAGETYPECHANNEL {
-		return c.SendChannelMsg(c.Channel.ID, msg, reply)
+func (ctx *Context) SendText(msg string, reply int) error {
+	if ctx.MessageType == MESSAGETYPECHANNEL {
+		return ctx.SendChannelMsg(ctx.Channel.ID, msg, reply)
 	} else {
-		return c.SendPrivateMsg(c.User.ID, msg, reply)
+		return ctx.SendPrivateMsg(ctx.User.ID, msg, reply)
 	}
 }
 
-func (c *Context) SendPrivateMsg(id int64, msg string, reply int) error {
-	_, err := c.Client.MessagesSendMessage(c, &tg.MessagesSendMessageRequest{
+func (ctx *Context) SendPrivateMsg(id int64, msg string, reply int) error {
+	_, err := ctx.Client.MessagesSendMessage(ctx, &tg.MessagesSendMessageRequest{
 		Peer:         &tg.InputPeerUser{UserID: id},
 		ReplyToMsgID: reply,
 		Message:      msg,
@@ -36,20 +36,20 @@ func (c *Context) SendPrivateMsg(id int64, msg string, reply int) error {
 	return err
 }
 
-func (c *Context) SendChannelMsg(id int64, msg string, reply int) error {
+func (ctx *Context) SendChannelMsg(id int64, msg string, reply int) error {
 
 	if id < 0 {
 		newID, _ := strconv.ParseInt(strings.TrimPrefix(strconv.FormatInt(id, 10), "-100"), 10, 64)
 		id = newID
 	}
 
-	resolvedPeer, err := c.Client.ChannelsGetChannels(c, []tg.InputChannelClass{&tg.InputChannel{ChannelID: id}})
+	resolvedPeer, err := ctx.Client.ChannelsGetChannels(ctx, []tg.InputChannelClass{&tg.InputChannel{ChannelID: id}})
 	if err != nil {
 		return err
 	}
 
 	channel := resolvedPeer.(*tg.MessagesChats).Chats[0].(*tg.Channel)
-	_, err = c.Client.MessagesSendMessage(c, &tg.MessagesSendMessageRequest{
+	_, err = ctx.Client.MessagesSendMessage(ctx, &tg.MessagesSendMessageRequest{
 		Peer:         &tg.InputPeerChannel{ChannelID: id, AccessHash: channel.AccessHash},
 		ReplyToMsgID: reply,
 		Message:      msg,
@@ -58,28 +58,28 @@ func (c *Context) SendChannelMsg(id int64, msg string, reply int) error {
 	return err
 }
 
-func (c *Context) EditMessage(msg string) error {
+func (ctx *Context) EditMessage(msg string) error {
 	req := &tg.MessagesEditMessageRequest{
 		Message: msg,
-		ID:      c.MsgID,
+		ID:      ctx.MsgID,
 	}
-	if c.MessageType == MESSAGETYPECHANNEL {
+	if ctx.MessageType == MESSAGETYPECHANNEL {
 		req.Peer = &tg.InputPeerChannel{
-			ChannelID:  c.Channel.GetID(),
-			AccessHash: c.Channel.AccessHash,
+			ChannelID:  ctx.Channel.GetID(),
+			AccessHash: ctx.Channel.AccessHash,
 		}
 	} else {
 		req.Peer = &tg.InputPeerUser{
-			UserID: c.User.GetID(),
+			UserID: ctx.User.GetID(),
 		}
 	}
-	_, err := c.Client.MessagesEditMessage(c, req)
+	_, err := ctx.Client.MessagesEditMessage(ctx, req)
 	return err
 }
 
-func (c *Context) DeleteMsg(flag bin.Fields, channelID int64, ids ...int) {
+func (ctx *Context) DeleteMsg(flag bin.Fields, channelID int64, ids ...int) {
 
-	resp, err := c.Client.MessagesDeleteMessages(c, &tg.MessagesDeleteMessagesRequest{
+	resp, err := ctx.Client.MessagesDeleteMessages(ctx, &tg.MessagesDeleteMessagesRequest{
 		Flags:  flag,
 		Revoke: true,
 		ID:     ids,
@@ -93,7 +93,7 @@ func (c *Context) DeleteMsg(flag bin.Fields, channelID int64, ids ...int) {
 		channelID = newID
 	}
 
-	resolvedPeer, err := c.Client.ChannelsGetChannels(c, []tg.InputChannelClass{&tg.InputChannel{ChannelID: channelID}})
+	resolvedPeer, err := ctx.Client.ChannelsGetChannels(ctx, []tg.InputChannelClass{&tg.InputChannel{ChannelID: channelID}})
 	if err != nil {
 		log.Errorln(err.Error())
 		return
@@ -101,7 +101,7 @@ func (c *Context) DeleteMsg(flag bin.Fields, channelID int64, ids ...int) {
 
 	channel := resolvedPeer.(*tg.MessagesChats).Chats[0].(*tg.Channel)
 	if resp.PtsCount < 1 {
-		affectedMessages, err := c.Client.ChannelsDeleteMessages(c, &tg.ChannelsDeleteMessagesRequest{
+		affectedMessages, err := ctx.Client.ChannelsDeleteMessages(ctx, &tg.ChannelsDeleteMessagesRequest{
 			Channel: &tg.InputChannel{
 				ChannelID:  channel.ID,
 				AccessHash: channel.AccessHash,
@@ -117,12 +117,12 @@ func (c *Context) DeleteMsg(flag bin.Fields, channelID int64, ids ...int) {
 	log.Infoln(resp)
 }
 
-func (c *Context) GetMsg(channelID int64, msgID int) tg.MessagesMessagesClass {
+func (ctx *Context) GetMsg(channelID int64, msgID int) tg.MessagesMessagesClass {
 	if channelID != 0 {
-		messages, err := c.Client.ChannelsGetMessages(c, &tg.ChannelsGetMessagesRequest{
+		messages, err := ctx.Client.ChannelsGetMessages(ctx, &tg.ChannelsGetMessagesRequest{
 			Channel: &tg.InputChannel{
 				ChannelID:  channelID,
-				AccessHash: c.GetChannel(channelID).AccessHash,
+				AccessHash: ctx.GetChannel(channelID).AccessHash,
 			},
 			ID: []tg.InputMessageClass{&tg.InputMessageID{
 				ID: msgID,
@@ -134,7 +134,7 @@ func (c *Context) GetMsg(channelID int64, msgID int) tg.MessagesMessagesClass {
 		return messages
 
 	} else {
-		messages, err := c.Client.MessagesGetMessages(c, []tg.InputMessageClass{&tg.InputMessageID{
+		messages, err := ctx.Client.MessagesGetMessages(ctx, []tg.InputMessageClass{&tg.InputMessageID{
 			ID: msgID,
 		}})
 		if err != nil {
@@ -144,8 +144,8 @@ func (c *Context) GetMsg(channelID int64, msgID int) tg.MessagesMessagesClass {
 	}
 }
 
-func (c *Context) GetChannel(channelID int64) *tg.Channel {
-	resolvedPeer, err := c.Client.ChannelsGetChannels(c, []tg.InputChannelClass{&tg.InputChannel{ChannelID: channelID}})
+func (ctx *Context) GetChannel(channelID int64) *tg.Channel {
+	resolvedPeer, err := ctx.Client.ChannelsGetChannels(ctx, []tg.InputChannelClass{&tg.InputChannel{ChannelID: channelID}})
 	if err != nil {
 		log.Errorln(err.Error())
 		return nil

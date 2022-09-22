@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -152,7 +153,7 @@ func Init(ctx context.Context, appID int, appHash string, proxy string) error {
 				log.Infoln("handle the matcher " + key.(string))
 				handle.Handler(c)
 			}()
-			return true
+			return false
 		})
 
 		log.Infoln("收到消息" + msg.Message)
@@ -207,7 +208,7 @@ func Init(ctx context.Context, appID int, appHash string, proxy string) error {
 				log.Infoln("handle the matcher " + key.(string))
 				handle.Handler(c)
 			}()
-			return true
+			return false
 		})
 
 		log.Infoln("收到消息" + msg.Message)
@@ -316,5 +317,6 @@ func (m *MyStore) LoadSession(ctx context.Context) ([]byte, error) {
 }
 
 func (m *MyStore) StoreSession(ctx context.Context, data []byte) error {
-	return m.Db.Store("tg_session", strings.ReplaceAll(string(data), `,"ReactionsDefault":{"Emoticon":"👍"}`, ""))
+	return m.Db.Store("tg_session", regexp.MustCompile(`(,"ReactionsDefault":\{.*?})`).ReplaceAllString(string(data), ""))
+	//return m.Db.Store("tg_session", strings.ReplaceAll(string(data), `,"ReactionsDefault":{"Emoticon":"👍"}`, ""))
 }

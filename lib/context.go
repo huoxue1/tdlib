@@ -34,18 +34,18 @@ type Context struct {
 	RegexMatchers [][]string
 }
 
-func (c *Context) Deadline() (deadline time.Time, ok bool) {
-	return c.ctx.Deadline()
+func (ctx *Context) Deadline() (deadline time.Time, ok bool) {
+	return ctx.ctx.Deadline()
 }
 
-func (c *Context) Done() <-chan struct{} {
-	return c.ctx.Done()
+func (ctx *Context) Done() <-chan struct{} {
+	return ctx.ctx.Done()
 }
 
-func (c *Context) Err() error {
-	return c.ctx.Err()
+func (ctx *Context) Err() error {
+	return ctx.ctx.Err()
 }
 
-func (c *Context) Value(key any) any {
-	return c.ctx.Value(key)
+func (ctx *Context) Value(key any) any {
+	return ctx.ctx.Value(key)
 }

@@ -3,6 +3,7 @@ package task
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,132 +45,202 @@ type Task struct {
 }
 
 func init() {
-	lib.OnConnect(func(ctx *lib.Context) {
-		log.Infoln("tdlib已连接成功！")
-		conf := conf2.GetConfig()
-		for i, s := range conf.QingLong {
-			ql := utils.InitQl(s.Url, s.ClientID, s.ClientSecret)
-			if ql == nil {
-				log.Errorln("初始化ql容器" + s.Url + "失败！！")
+	lib.OnConnect(connectHandler)
+	lib.NewPlugin("export", lib.OnlyChannels(conf2.GetConfig().Telegram.ListenCH...)).OnRegex(`export\s(.*?)="(.*?)"`).Handle(exportHandler)
+	lib.NewPlugin("check_task", lib.OnlySelf()).OnCommand("check_task", "检查任务").Handle(checkTaskHandler)
+	lib.NewPlugin("disable_task", lib.OnlySelf()).OnCommand("disable_task", "禁用任务").Handle(disableTaskHandler)
+	lib.NewPlugin("enable_task", lib.OnlySelf()).OnCommand("disable_task", "启用任务").Handle(enableTaskHandler)
+}
+
+func enableTaskHandler(ctx *lib.Context) {
+	if len(ctx.Args) < 1 {
+		log.Errorln("参数不足")
+		return
+	}
+	id, err := strconv.Atoi(ctx.Args[0])
+	if err != nil {
+		log.Errorln("转化参数错误")
+		return
+	}
+	task := tasks[id-1]
+
+	log.Infoln("即将启用task" + task.Name)
+	task.Disable = false
+	db, _ := lib.InitDB()
+	_ = db.Delete(task.Name + "_disable")
+	_ = ctx.EditMessage("已成功启用任务" + task.Name)
+	time.Sleep(10 * time.Second)
+	ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
+	_ = ctx.EditMessage("enable")
+
+}
+
+func disableTaskHandler(ctx *lib.Context) {
+	if len(ctx.Args) < 1 {
+		return
+	}
+	id, err := strconv.Atoi(ctx.Args[0])
+	if err != nil {
+		return
+	}
+	task := tasks[id-1]
+
+	log.Infoln("即将禁用task" + task.Name)
+	task.Disable = true
+	db, _ := lib.InitDB()
+	err = db.Store(task.Name+"_disable", "true")
+	if err != nil {
+		return
+	}
+	_ = ctx.EditMessage("已成功禁用任务" + task.Name)
+	time.Sleep(10 * time.Second)
+	ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
+	_ = ctx.EditMessage("disable")
+
+}
+
+func checkTaskHandler(ctx *lib.Context) {
+	msg := ""
+	getEmoji := func(bool2 bool) string {
+		if !bool2 {
+			return "🉑"
+		} else {
+			return "🚫"
+		}
+	}
+	for i, task := range tasks {
+		msg += fmt.Sprintf("\n%v %d：%v,%d/%d\n", getEmoji(task.Disable), i+1, task.Name, task.wait, task.total)
+	}
+	_ = ctx.EditMessage(msg)
+	time.Sleep(time.Second * 7)
+	ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
+}
+
+// connectHandler
+/* @Description: 初始化task
+*  @param ctx
+ */
+func connectHandler(ctx *lib.Context) {
+	log.Infoln("tdlib已连接成功！")
+	conf := conf2.GetConfig()
+	for i, s := range conf.QingLong {
+		ql := utils.InitQl(s.Url, s.ClientID, s.ClientSecret)
+		if ql == nil {
+			log.Errorln("初始化ql容器" + s.Url + "失败！！")
+			continue
+		}
+		qlMap[i+1] = &QingLong{
+			ClientID:     s.ClientID,
+			ClientSecret: s.ClientSecret,
+			Url:          s.Url,
+			QL:           ql,
+		}
+		log.Infoln(fmt.Sprintf("初始化青龙%v成功", s.Url))
+	}
+	db, _ := lib.InitDB()
+	for _, s := range conf.JsConfig {
+		t := &Task{
+			Env:       s.Env,
+			KeyWords:  s.KeyWord,
+			Script:    s.Script,
+			Name:      s.Name,
+			TimeOut:   s.TimeOut,
+			Disable:   s.Disable,
+			cronID:    make(map[int]int, 5),
+			ch:        make(chan int, 20),
+			total:     0,
+			wait:      0,
+			oldExport: []string{},
+		}
+		for _, i := range s.Container {
+			ql, ok := qlMap[i]
+			if !ok {
+				log.Errorln(fmt.Sprintf("青龙%d不存在，已跳过", i))
 				continue
 			}
-			qlMap[i+1] = &QingLong{
-				ClientID:     s.ClientID,
-				ClientSecret: s.ClientSecret,
-				Url:          s.Url,
-				QL:           ql,
+			crons, err := ql.QL.GetCrons(s.Script)
+			if err != nil {
+				log.Errorln("从青龙获取定时任务失败" + err.Error())
+				continue
 			}
-			log.Infoln(fmt.Sprintf("初始化青龙%v成功", s.Url))
+			for _, cron := range crons {
+				paths := strings.Split(strings.TrimSpace(strings.TrimPrefix(cron.Command, "task")), "/")
+				if strings.Join(paths, "/") == s.Script {
+					log.Infoln(fmt.Sprintf("已成功初始化%v,定时id%d", s.Name, cron.Id))
+					t.cronID[i] = cron.Id
+					break
+				}
+				if paths[len(paths)-1] == s.Script {
+					log.Infoln(fmt.Sprintf("已成功初始化%v,定时id%d", s.Name, cron.Id))
+					t.cronID[i] = cron.Id
+					break
+				}
+			}
+
 		}
-		for _, s := range conf.JsConfig {
-			t := &Task{
-				Env:       s.Env,
-				KeyWords:  s.KeyWord,
-				Script:    s.Script,
-				Name:      s.Name,
-				TimeOut:   s.TimeOut,
-				Disable:   s.Disable,
-				cronID:    make(map[int]int, 5),
-				ch:        make(chan int, 20),
-				total:     0,
-				wait:      0,
-				oldExport: []string{},
-			}
-			for _, i := range s.Container {
-				ql, ok := qlMap[i]
-				if !ok {
-					log.Errorln(fmt.Sprintf("青龙%d不存在，已跳过", i))
-					continue
-				}
-				crons, err := ql.QL.GetCrons(s.Script)
-				if err != nil {
-					log.Errorln("从青龙获取定时任务失败" + err.Error())
-					continue
-				}
-				for _, cron := range crons {
-					paths := strings.Split(strings.TrimSpace(strings.TrimPrefix(cron.Command, "task")), "/")
-					if strings.Join(paths, "/") == s.Script {
-						log.Infoln(fmt.Sprintf("已成功初始化%v,定时id%d", s.Name, cron.Id))
-						t.cronID[i] = cron.Id
-						break
+		tasks = append(tasks, t)
+
+		load, _ := db.Load(t.Name + "_disable")
+		if load != "" {
+			t.Disable = true
+			log.Warningln("已禁用任务 " + t.Name)
+		}
+
+		go func(ctx2 *lib.Context, task *Task) {
+			for {
+				_ = <-task.ch
+				task.wait--
+				log.Infoln("开始执行任务" + task.Name)
+
+				for i, id := range task.cronID {
+					err := ctx2.SendChannelMsg(conf.Telegram.LogId, "开始执行任务"+task.Name, 0)
+					if err != nil {
+						log.Errorln("发送通知失败" + err.Error())
+						return
 					}
-					if paths[len(paths)-1] == s.Script {
-						log.Infoln(fmt.Sprintf("已成功初始化%v,定时id%d", s.Name, cron.Id))
-						t.cronID[i] = cron.Id
-						break
+					ql := qlMap[i]
+					err = ql.QL.RunCrons(id)
+					if err != nil {
+						log.Errorln("执行定时任务异常" + err.Error())
+						continue
 					}
-				}
-
-			}
-			tasks = append(tasks, t)
-
-			go func(ctx2 *lib.Context, task *Task) {
-				for {
-					_ = <-task.ch
-					task.wait--
-					log.Infoln("开始执行任务" + task.Name)
-
-					for i, id := range task.cronID {
-						err := ctx2.SendChannelMsg(conf.Telegram.LogId, "开始执行任务"+task.Name, 0)
-						if err != nil {
-							log.Errorln("发送通知失败" + err.Error())
-							return
-						}
-						ql := qlMap[i]
-						err = ql.QL.RunCrons(id)
-						if err != nil {
-							log.Errorln("执行定时任务异常" + err.Error())
-							continue
-						}
-						start := time.Now()
-						c := make(chan int, 1)
-						id := id
-						go func() {
-							for true {
-								cron, err := ql.QL.GetCron(id)
-								if err != nil {
-									log.Errorln("获取定时任务状态异常" + err.Error())
-									c <- 0
-									return
-								}
-								if cron.Status == 1 {
-									log.Infoln("任务执行结束")
-									c <- 1
-									return
-								}
-								time.Sleep(time.Second * 5)
+					start := time.Now()
+					c := make(chan int, 1)
+					id := id
+					go func() {
+						for true {
+							cron, err := ql.QL.GetCron(id)
+							if err != nil {
+								log.Errorln("获取定时任务状态异常" + err.Error())
+								c <- 0
+								return
 							}
-						}()
+							if cron.Status == 1 {
+								log.Infoln("任务执行结束")
+								c <- 1
+								return
+							}
+							time.Sleep(time.Second * 5)
+						}
+					}()
 
-						after := time.After(time.Minute * 5)
-						select {
-						case <-after:
-							log.Errorln("任务执行超时")
-						case <-c:
-							log.Infoln("任务执行完成")
-						}
-						err = ctx2.SendChannelMsg(conf.Telegram.LogId, fmt.Sprintf("%v任务执行完成，用时%.2f秒", task.Name, time.Now().Sub(start).Seconds()), 0)
-						if err != nil {
-							log.Errorln("发送通知失败" + err.Error())
-							return
-						}
+					after := time.After(time.Minute * 5)
+					select {
+					case <-after:
+						log.Errorln("任务执行超时")
+					case <-c:
+						log.Infoln("任务执行完成")
 					}
-					time.Sleep(1 * time.Minute)
+					err = ctx2.SendChannelMsg(conf.Telegram.LogId, fmt.Sprintf("%v任务执行完成，用时%.2f秒", task.Name, time.Now().Sub(start).Seconds()), 0)
+					if err != nil {
+						log.Errorln("发送通知失败" + err.Error())
+						return
+					}
 				}
-			}(ctx, t)
-		}
-	})
-
-	lib.NewPlugin("export", lib.OnlyChannels(conf2.GetConfig().Telegram.ListenCH...)).OnRegex(`export\s(.*?)="(.*?)"`).Handle(exportHandler)
-	lib.NewPlugin("check_task", lib.OnlySelf()).OnCommand("check_task").Handle(func(ctx *lib.Context) {
-		msg := ""
-		for _, task := range tasks {
-			msg += fmt.Sprintf("\n%v,%d/%d\n", task.Name, task.wait, task.total)
-		}
-		_ = ctx.EditMessage(msg)
-		time.Sleep(time.Second * 7)
-		ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
-	})
+				time.Sleep(1 * time.Minute)
+			}
+		}(ctx, t)
+	}
 }
 
 func exportHandler(ctx *lib.Context) {
@@ -234,6 +305,15 @@ func exportHandler(ctx *lib.Context) {
 			log.Debugln("旧的变量，已忽略")
 			return
 		}
+	}
+	if matchTask.Disable {
+		msg += "检测到任务" + matchTask.Name + "\n任务已被禁用"
+		err := ctx.SendChannelMsg(config.Telegram.LogId, msg, 0)
+		if err != nil {
+			log.Errorln("发送通知失败" + err.Error())
+			return
+		}
+		return
 	}
 
 	matchTask.total++

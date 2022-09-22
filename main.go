@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -38,9 +37,12 @@ func init() {
 
 func init() {
 	lib.NewPlugin("echo", lib.OnlySelf()).OnCommand("echo").Handle(func(ctx *lib.Context) {
-		_ = ctx.EditMessage("echo成功")
-		time.Sleep(time.Second * 5)
-		ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
+		event, err := ctx.GetEvent()
+		if err != nil {
+			log.Errorln("等待超时")
+			return
+		}
+		log.Infoln("收到连续消息" + event.Message)
 	})
 }
 
