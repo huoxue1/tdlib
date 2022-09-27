@@ -32,7 +32,12 @@ func init() {
 		CallerFirst:           false,
 		CustomCallerFormatter: nil,
 	})
-	log.SetLevel(log.DebugLevel)
+	if conf.GetConfig().LogLevel == "info" {
+		log.SetLevel(log.InfoLevel)
+	} else {
+		log.SetLevel(log.DebugLevel)
+	}
+
 }
 
 func init() {

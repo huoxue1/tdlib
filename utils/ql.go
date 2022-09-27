@@ -156,7 +156,12 @@ func (q *Ql) GetCrons(search string) ([]*Cron, error) {
 		log.Errorln("请求api错误" + gjson.GetBytes(res, "data").String())
 		return nil, err
 	}
-	for _, result := range gjson.GetBytes(res, "data").Array() {
+	p := "data"
+	if gjson.GetBytes(res, "data.total").Exists() {
+		p = "data.data"
+	}
+
+	for _, result := range gjson.GetBytes(res, p).Array() {
 		c := new(Cron)
 		err := json.Unmarshal([]byte(result.String()), c)
 		if err != nil {

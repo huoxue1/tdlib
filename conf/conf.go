@@ -14,6 +14,7 @@ type Config struct {
 	AutoRestart     string `json:"AutoRestart" mapstructure:"AutoRestart"`
 	ContainerWait   int    `json:"Container_Wait" mapstructure:"Container_Wait"`
 	LogEnable       bool   `json:"LogEnable" mapstructure:"LogEnable"`
+	LogLevel        string `json:"LogLevel" mapstructure:"LogLevel"`
 	QingLong        []struct {
 		ClientID     string `json:"Client_ID" mapstructure:"Client_ID"`
 		ClientSecret string `json:"Client_Secret" mapstructure:"Client_Secret"`
@@ -76,6 +77,7 @@ func InitConfig() {
 				log.Errorln(err.Error())
 			}
 		}
+		viper.SetDefault("LogLevel", "info")
 		c := new(Config)
 		err = viper.Unmarshal(c)
 		if err != nil {

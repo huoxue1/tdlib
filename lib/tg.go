@@ -82,8 +82,13 @@ func Init(ctx context.Context, appID int, appHash string, proxy string) error {
 		log.Infoln("已加载插件 ==》 " + key.(string))
 		return true
 	})
+	var l *zap.Logger
+	if log.GetLevel() == log.DebugLevel {
+		l, _ = zap.NewDevelopment(zap.IncreaseLevel(zapcore.DebugLevel), zap.AddStacktrace(zapcore.FatalLevel))
+	} else {
+		l, _ = zap.NewProduction(zap.IncreaseLevel(zapcore.InfoLevel), zap.AddStacktrace(zapcore.FatalLevel))
+	}
 
-	l, _ := zap.NewDevelopment(zap.IncreaseLevel(zapcore.InfoLevel), zap.AddStacktrace(zapcore.FatalLevel))
 	dispatcher := tg.NewUpdateDispatcher()
 	gaps := updates.New(updates.Config{
 		Handler: dispatcher,

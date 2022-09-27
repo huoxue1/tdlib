@@ -348,7 +348,7 @@ func exportHandler(ctx *lib.Context) {
 	}
 
 	for _, s := range matchTask.oldExport {
-		if s == exports[0]["name"] {
+		if s == exports[0]["value"] {
 			msg += "旧的变量，已忽略"
 			err := ctx.SendChannelMsg(config.Telegram.LogId, msg, 0)
 			if err != nil {
@@ -371,7 +371,7 @@ func exportHandler(ctx *lib.Context) {
 
 	matchTask.total++
 	matchTask.wait++
-	matchTask.oldExport = append(matchTask.oldExport, exports[0]["name"])
+	matchTask.oldExport = append(matchTask.oldExport, exports[0]["value"])
 	matchTask.ch <- 0
 	msg += "检测到任务" + matchTask.Name
 	msg += fmt.Sprintf("\n等待中：%d,总共运行：%d", matchTask.wait, matchTask.total)
