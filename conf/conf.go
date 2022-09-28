@@ -78,6 +78,7 @@ func InitConfig() {
 			}
 		}
 		viper.SetDefault("LogLevel", "info")
+		viper.SetDefault("WaitTime", 3)
 		c := new(Config)
 		err = viper.Unmarshal(c)
 		if err != nil {

@@ -37,7 +37,7 @@ type Task struct {
 	// 运行过的变量
 	oldExport []string
 	// 运行的通道
-	ch chan int
+	ch chan []map[string]string
 	// 总共运行
 	total int
 	// 等待中的变量
@@ -88,7 +88,7 @@ func addTaskHandler(ctx *lib.Context) {
 		TimeOut:   0,
 		Disable:   false,
 		cronID:    make(map[int]int, 5),
-		ch:        make(chan int, 20),
+		ch:        make(chan []map[string]string, 20),
 		total:     0,
 		wait:      0,
 		oldExport: []string{},
@@ -193,7 +193,7 @@ func connectHandler(ctx *lib.Context) {
 			TimeOut:   s.TimeOut,
 			Disable:   s.Disable == 1,
 			cronID:    make(map[int]int, 5),
-			ch:        make(chan int, 20),
+			ch:        make(chan []map[string]string, 20),
 			total:     0,
 			wait:      0,
 			oldExport: []string{},
@@ -243,7 +243,7 @@ func connectHandler(ctx *lib.Context) {
 func runTask(ctx2 *lib.Context, task *Task) {
 	conf := conf2.GetConfig()
 	for {
-		_ = <-task.ch
+		exports := <-task.ch
 		task.wait--
 		log.Infoln("开始执行任务" + task.Name)
 
@@ -254,6 +254,11 @@ func runTask(ctx2 *lib.Context, task *Task) {
 				return
 			}
 			ql := qlMap[i]
+			err = AddEnv(ql.QL, exports)
+			if err != nil {
+				log.Errorln("添加环境变量失败" + err.Error())
+				continue
+			}
 			err = ql.QL.RunCrons(id)
 			if err != nil {
 				log.Errorln("执行定时任务异常" + err.Error())
@@ -292,7 +297,7 @@ func runTask(ctx2 *lib.Context, task *Task) {
 				return
 			}
 		}
-		time.Sleep(1 * time.Minute)
+		time.Sleep(time.Duration(conf.WaitTime) * time.Minute)
 	}
 }
 
@@ -338,13 +343,6 @@ func exportHandler(ctx *lib.Context) {
 			return
 		}
 		return
-	} else {
-		for i := range matchTask.cronID {
-			err := AddEnv(qlMap[i].QL, exports)
-			if err != nil {
-				return
-			}
-		}
 	}
 
 	for _, s := range matchTask.oldExport {
@@ -372,7 +370,7 @@ func exportHandler(ctx *lib.Context) {
 	matchTask.total++
 	matchTask.wait++
 	matchTask.oldExport = append(matchTask.oldExport, exports[0]["value"])
-	matchTask.ch <- 0
+	matchTask.ch <- exports
 	msg += "检测到任务" + matchTask.Name
 	msg += fmt.Sprintf("\n等待中：%d,总共运行：%d", matchTask.wait, matchTask.total)
 	err := ctx.SendChannelMsg(config.Telegram.LogId, msg, 0)
