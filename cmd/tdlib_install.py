@@ -18,7 +18,6 @@ if platform.system().lower() == "windows":
 
 print = partial(print, flush=True)
 
-
 task = '''
 - Container:
     - 1
@@ -486,6 +485,7 @@ task = '''
   Wait: 0
 '''
 
+
 def updateDependent() -> str:
     """
     更新依赖的主函数
@@ -599,6 +599,8 @@ def main():
         print("是否将tdlib加入系统启动system命令(y/n)")
         if checkYesOrNo():
             addSystemctl()
+            os.system("systemctl enable tdlib")
+            print("已加入开机自启动，输入 systemctl start tdlib即可后台启动")
     print("是否启动tdlib? (y/n)")
     if checkYesOrNo():
         if platform.system().lower() == "windows":
@@ -609,5 +611,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
