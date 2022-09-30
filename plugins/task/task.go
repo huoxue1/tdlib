@@ -49,7 +49,7 @@ func init() {
 	lib.NewPlugin("export", lib.OnlyChannels(conf2.GetConfig().Telegram.ListenCH...)).OnRegex(`export\s(.*?)="(.*?)"`).Handle(exportHandler)
 	lib.NewPlugin("check_task", lib.OnlySelf()).OnCommand("check_task", "检查任务").Handle(checkTaskHandler)
 	lib.NewPlugin("disable_task", lib.OnlySelf()).OnCommand("disable_task", "禁用任务").Handle(disableTaskHandler)
-	lib.NewPlugin("enable_task", lib.OnlySelf()).OnCommand("disable_task", "启用任务").Handle(enableTaskHandler)
+	lib.NewPlugin("enable_task", lib.OnlySelf()).OnCommand("enable_task", "启用任务").Handle(enableTaskHandler)
 	lib.NewPlugin("add_task", lib.OnlySelf()).OnCommand("add_task", "添加任务").Handle(addTaskHandler)
 }
 
@@ -169,6 +169,12 @@ func checkTaskHandler(ctx *lib.Context) {
 func connectHandler(ctx *lib.Context) {
 	log.Infoln("tdlib已连接成功！")
 	conf := conf2.GetConfig()
+	err := ctx.SendChannelMsg(conf.Telegram.LogId, "tdlib已启动成功", 0)
+	if err != nil {
+		log.Errorln("发送通知失败" + err.Error())
+		err = nil
+	}
+
 	for i, s := range conf.QingLong {
 		ql := utils.InitQl(s.Url, s.ClientID, s.ClientSecret)
 		if ql == nil {

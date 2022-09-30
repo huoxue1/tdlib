@@ -5,6 +5,6 @@ import (
 )
 
 func TestBean(t *testing.T) {
-	TotalBean("")
+	GetJxBean("ptd;")
 
 }

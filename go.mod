@@ -4,9 +4,12 @@ go 1.18
 
 require (
 	github.com/Lyrics-you/sail-logrus-formatter v1.3.1
+	github.com/dustin/go-humanize v1.0.0
 	github.com/google/uuid v1.1.2
 	github.com/gotd/td v0.69.0
 	github.com/imroc/req/v3 v3.22.0
+	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
+	github.com/klauspost/compress v1.15.9
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.13.0
 	github.com/syndtr/goleveldb v1.0.0
@@ -32,7 +35,6 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/lucas-clemente/quic-go v0.28.1 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/marten-seemann/qpack v0.2.1 // indirect

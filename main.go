@@ -5,9 +5,8 @@ import (
 	"os"
 	"os/signal"
 
-	log "github.com/sirupsen/logrus"
-
 	nested "github.com/Lyrics-you/sail-logrus-formatter/sailor"
+	log "github.com/sirupsen/logrus"
 
 	_ "github.com/huoxue1/tdlib/plugins/task"
 
@@ -16,7 +15,6 @@ import (
 )
 
 func init() {
-	conf.InitConfig()
 	log.SetFormatter(&nested.Formatter{
 		FieldsOrder:           nil,
 		TimeStampFormat:       "2006-01-02 15:04:05",
@@ -32,6 +30,7 @@ func init() {
 		CallerFirst:           false,
 		CustomCallerFormatter: nil,
 	})
+	conf.InitConfig()
 	if conf.GetConfig().LogLevel == "info" {
 		log.SetLevel(log.InfoLevel)
 	} else {

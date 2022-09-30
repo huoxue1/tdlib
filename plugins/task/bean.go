@@ -24,28 +24,29 @@ func init() {
 			log.Errorln("获取cookie失败" + err.Error())
 			return
 		}
-		detail, err := utils.GetBeanDetail(envs[index-1].Value)
+
+		detail, err := utils.GetJxBean(envs[index-1].Value)
 		if err != nil {
-			log.Errorln("获取京豆详情失败" + err.Error())
+			_ = ctx.EditMessage(err.Error())
 			return
 		}
 		total := 0
-		for _, d := range detail {
-			dou, _ := strconv.Atoi(d.Amount)
-			total += dou
+		msg := "京豆总和：" + strconv.Itoa(detail.BeanNum) + ",今日总计： %d\n"
+		for i, s := range detail.List {
+			data, _ := time.Parse("2006-01-02 15:04:05", s.CreateDate)
+			if data.Day() == time.Now().Day() {
+				total += s.Amount
+				if i <= 40 {
+					msg += fmt.Sprintf("%v:  %v\n", s.VisibleInfo, s.Amount)
+				} else if i == 41 {
+					msg += "..."
+				} else {
+
+				}
+
+			}
 		}
-		bean, err := utils.TotalBean(envs[index-1].Value)
-		if err != nil {
-			log.Errorln("获取京豆总和失败")
-			return
-		}
-		log.Debugln(*bean)
-		msg := bean.Data.UserInfo.BaseInfo.Nickname + " 京豆详情：\n"
-		msg += fmt.Sprintf("京东总和：%v,今日收入：%d\n", bean.Data.AssetInfo.BeanNum, total)
-		for _, d := range detail {
-			msg += fmt.Sprintf("\n%s: %v豆", d.EventMassage, d.Amount)
-		}
-		_ = ctx.EditMessage(msg)
+		_ = ctx.EditMessage(fmt.Sprintf(msg, total))
 		time.Sleep(time.Second * 5)
 		ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
 		_ = ctx.EditMessage("豆")
