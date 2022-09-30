@@ -606,6 +606,7 @@ def main():
         if platform.system().lower() == "windows":
             os.system("tdlib.exe")
         else:
+            os.system("chmod -R 777 ./tdlib")
             os.system("./tdlib")
 
 
