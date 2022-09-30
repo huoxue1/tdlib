@@ -581,7 +581,7 @@ def main():
     github = "https://github.com"
     version = last_version()
     binaryName = updateDependent()
-    if not os.path.isfile("tdlib.exe") or not os.path.isfile("tdlib"):
+    if os.path.exists("tdlib.exe") or os.path.exists("tdlib"):
         print("检测到tdlib文件已经存在，是否跳过下载(y/n)")
         if not checkYesOrNo():
             download(github, version, binaryName)
