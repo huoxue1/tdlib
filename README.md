@@ -4,6 +4,8 @@
 
 在release下载文件，直接运行
 
+## 命令列表
+[点我查看命令列表](./doc/cmd.md)
 
 ## 配置文件
 + config.yaml
