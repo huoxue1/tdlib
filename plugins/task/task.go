@@ -192,16 +192,22 @@ func connectHandler(ctx *lib.Context) {
 	db, _ := lib.InitDB()
 	for _, s := range conf.JsConfig {
 		t := &Task{
-			Env:       s.Env,
-			KeyWords:  s.KeyWord,
-			Script:    s.Script,
-			Name:      s.Name,
-			TimeOut:   s.TimeOut,
+			Env:      s.Env,
+			KeyWords: s.KeyWord,
+			Script:   s.Script,
+			Name:     s.Name,
+			TimeOut: func() int {
+				if s.TimeOut == 0 {
+					return 5
+				} else {
+					return s.TimeOut
+				}
+			}(),
 			Disable:   s.Disable == 1,
 			cronID:    make(map[int]int, 5),
-			ch:        make(chan []map[string]string, 20),
+			ch:        make(chan []map[string]string, 50),
 			total:     0,
-			wait:      0,
+			wait:      s.Wait,
 			oldExport: []string{},
 		}
 		for _, i := range s.Container {
@@ -290,7 +296,7 @@ func runTask(ctx2 *lib.Context, task *Task) {
 				}
 			}()
 
-			after := time.After(time.Minute * 5)
+			after := time.After(time.Minute * time.Duration(task.TimeOut))
 			select {
 			case <-after:
 				log.Errorln("任务执行超时")
@@ -303,7 +309,7 @@ func runTask(ctx2 *lib.Context, task *Task) {
 				return
 			}
 		}
-		time.Sleep(time.Duration(conf.WaitTime) * time.Minute)
+		time.Sleep(time.Duration(task.wait) * time.Minute)
 	}
 }
 

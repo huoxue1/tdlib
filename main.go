@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"os"
+	"os/exec"
 	"os/signal"
+	"syscall"
 
 	nested "github.com/Lyrics-you/sail-logrus-formatter/sailor"
+	"github.com/huoxue1/xdaemon"
 	log "github.com/sirupsen/logrus"
 
 	_ "github.com/huoxue1/tdlib/plugins/task"
@@ -15,6 +18,7 @@ import (
 )
 
 func init() {
+	runBack()
 	log.SetFormatter(&nested.Formatter{
 		FieldsOrder:           nil,
 		TimeStampFormat:       "2006-01-02 15:04:05",
@@ -36,7 +40,6 @@ func init() {
 	} else {
 		log.SetLevel(log.DebugLevel)
 	}
-
 }
 
 func init() {
@@ -57,4 +60,39 @@ func main() {
 	if err := lib.Init(ctx, config.Telegram.ApiId, config.Telegram.ApiHash, config.Telegram.ProxyURL); err != nil {
 		panic(err)
 	}
+}
+
+func runBack() {
+	cmd, err := xdaemon.Background(os.Stdout, false)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	if xdaemon.IsParent() {
+		go onKill(cmd)
+		for true {
+			_ = cmd.Wait()
+			if cmd.ProcessState.Exited() {
+				if cmd.ProcessState.ExitCode() != 1001 {
+					break
+				}
+			}
+			cmd, err = xdaemon.Background(os.Stdout, false)
+			if err != nil {
+				return
+			}
+		}
+		os.Exit(0)
+	}
+}
+
+func onKill(cmd *exec.Cmd) {
+	c := make(chan os.Signal)
+	//监听指定信号 ctrl+c kill
+	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	<-c
+
+	if cmd.Process != nil {
+		cmd.Process.Kill()
+	}
+	os.Exit(1)
 }

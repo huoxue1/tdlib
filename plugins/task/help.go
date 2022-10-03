@@ -3,13 +3,8 @@ package task
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
-	conf2 "github.com/huoxue1/tdlib/conf"
 	"github.com/huoxue1/tdlib/lib"
 )
 
@@ -31,15 +26,16 @@ func init() {
 /* @Description:
  */
 func Restart() {
-	once := sync.Once{}
-	once.Do(func() {
-		log.Infoln("程序启动命令： " + conf2.GetConfig().RestartCmd)
-		cmd := exec.Command(conf2.GetConfig().RestartCmd)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		cmd.Start()
-		os.Exit(3)
-	})
+	os.Exit(1001)
+	//once := sync.Once{}
+	//once.Do(func() {
+	//	log.Infoln("程序启动命令： " + conf2.GetConfig().RestartCmd)
+	//	cmd := exec.Command(conf2.GetConfig().RestartCmd)
+	//	cmd.Stdout = os.Stdout
+	//	cmd.Stderr = os.Stderr
+	//	cmd.Stdin = os.Stdin
+	//	cmd.Start()
+	//	os.Exit(3)
+	//})
 
 }

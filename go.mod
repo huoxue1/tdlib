@@ -7,6 +7,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/google/uuid v1.1.2
 	github.com/gotd/td v0.69.0
+	github.com/huoxue1/xdaemon v0.0.0-20221003021252-8ce95c07edb0
 	github.com/imroc/req/v3 v3.22.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/klauspost/compress v1.15.9
