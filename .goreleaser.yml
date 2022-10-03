@@ -30,7 +30,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X main.VERSION=v{{.Version}}
+      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}}
   - id: win
     env:
       - CGO_ENABLED=0
@@ -46,7 +46,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X main.VERSION=v{{.Version}}
+      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}}
 
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
@@ -79,14 +79,14 @@ archives:
       - goos: windows
         format: zip
 
-nfpms:
-  - license: AGPL 3.0
-    homepage: https://github.com/johlanse/study_xxqg
-    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    formats:
-      - deb
-      - rpm
-    maintainer: johlanse
-    builds:
-      - nowin
-      - win
+#nfpms:
+#  - license: AGPL 3.0
+#    homepage: https://github.com/huoxue1/tdlib
+#    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+#    formats:
+#      - deb
+#      - rpm
+#    maintainer: huoxue1
+#    builds:
+#      - nowin
+#      - win

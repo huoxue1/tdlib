@@ -78,6 +78,15 @@ func InitQl(api, clientID, clientSecret string) *Ql {
 			q.token = token
 		}
 	}
+	q.c.SetCommonHeader("Authorization", "Bearer "+q.token)
+	if !q.checkToken() {
+		q.token = q.getToken()
+		q.c.SetCommonHeader("Authorization", "Bearer "+q.token)
+		_, err := q.GetSystem()
+		if err != nil {
+			return nil
+		}
+	}
 	err = q.storage.Store("ql_"+api, q.token)
 	if err != nil {
 		log.Errorln("store token faild," + err.Error())
@@ -88,8 +97,35 @@ func InitQl(api, clientID, clientSecret string) *Ql {
 }
 
 func (q *Ql) checkToken() bool {
-
+	system, err := q.GetSystem()
+	if err != nil {
+		return false
+	}
+	log.Infoln("青龙版本: " + system.Version)
 	return true
+}
+
+type QLSystem struct {
+	IsInitialized bool   `json:"isInitialized"`
+	Version       string `json:"version"`
+}
+
+func (q *Ql) GetSystem() (*QLSystem, error) {
+	system := new(QLSystem)
+	response, err := q.c.R().Get(q.Api + "/open/system")
+	if err != nil {
+		return system, err
+	}
+	res := response.Bytes()
+	if gjson.GetBytes(res, "code").Int() != 200 {
+		log.Errorln("请求api错误" + gjson.GetBytes(res, "data").String())
+		return system, err
+	}
+	err = json.Unmarshal([]byte(gjson.GetBytes(res, "data").String()), system)
+	if err != nil {
+		return system, err
+	}
+	return system, err
 }
 
 func (q *Ql) getToken() string {

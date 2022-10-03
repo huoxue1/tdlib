@@ -36,13 +36,9 @@ type Config struct {
 		MasterId         []int64  `json:"master_id" mapstructure:"master_id" yaml:"master_id"`
 		ProxyURL         string   `json:"proxy_url" mapstructure:"proxy_url" yaml:"proxy_url"`
 	} `json:"Telegram" mapstructure:"Telegram" yaml:"Telegram"`
-	UseSillyGirl bool          `json:"Use_SillyGirl" mapstructure:"Use_SillyGirl" yaml:"Use_SillyGirl"`
-	WaitTime     int           `json:"WaitTime" mapstructure:"WaitTime" yaml:"WaitTime"`
-	Branch       string        `json:"branch" mapstructure:"branch" yaml:"branch"`
-	DownProxy    string        `json:"down_proxy" mapstructure:"down_proxy" yaml:"down_proxy"`
-	JsConfig     []*TaskConfig `json:"js_config" mapstructure:"js_config" yaml:"js_config"`
-	UpdateUrl    string        `json:"update_url" mapstructure:"update_url" yaml:"update_url"`
-	RestartCmd   string        `json:"restart_cmd" yaml:"restart_cmd" mapstructure:"restart_cmd"`
+	WaitTime  int           `json:"WaitTime" mapstructure:"WaitTime" yaml:"WaitTime"`
+	DownProxy string        `json:"down_proxy" mapstructure:"down_proxy" yaml:"down_proxy"`
+	JsConfig  []*TaskConfig `json:"js_config" mapstructure:"js_config" yaml:"js_config"`
 }
 
 type TaskConfig struct {
@@ -58,8 +54,13 @@ type TaskConfig struct {
 }
 
 var (
-	config *Config
+	config  *Config
+	Version = "UNKNOWN"
 )
+
+func GetVersion() string {
+	return Version
+}
 
 func InitConfig() {
 	once := sync.Once{}
@@ -78,7 +79,6 @@ func InitConfig() {
 		}
 		viper.SetDefault("LogLevel", "info")
 		viper.SetDefault("WaitTime", 3)
-		viper.SetDefault("restart_cmd", "./tdlib")
 
 		err = viper.Unmarshal(c)
 		if err != nil {

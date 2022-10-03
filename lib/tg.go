@@ -132,6 +132,11 @@ func Init(ctx context.Context, appID int, appHash string, proxy string) error {
 				_ = recover()
 			}()
 			handle := value.(*Matcher)
+			// 检查插件是否被禁用
+			if handle.Disable {
+				return true
+			}
+			// 检查插件rule
 			for _, rule := range handle.Rules {
 				handleRule := func(rule2 Rule) bool {
 					defer func() {

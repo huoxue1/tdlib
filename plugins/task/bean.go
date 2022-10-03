@@ -31,20 +31,22 @@ func init() {
 			return
 		}
 		total := 0
+		beans := make(map[string]int, 50)
 		msg := "京豆总和：" + strconv.Itoa(detail.BeanNum) + ",今日总计： %d\n"
-		for i, s := range detail.List {
+		for _, s := range detail.List {
 			data, _ := time.Parse("2006-01-02 15:04:05", s.CreateDate)
 			if data.Day() == time.Now().Day() {
 				total += s.Amount
-				if i <= 40 {
-					msg += fmt.Sprintf("%v:  %v\n", s.VisibleInfo, s.Amount)
-				} else if i == 41 {
-					msg += "..."
+				if _, ok := beans[s.VisibleInfo]; ok {
+					beans[s.VisibleInfo] += s.Amount
 				} else {
-
+					beans[s.VisibleInfo] = s.Amount
 				}
 
 			}
+		}
+		for s, i := range beans {
+			msg += fmt.Sprintf("%v: %d\n", s, i)
 		}
 		_ = ctx.EditMessage(fmt.Sprintf(msg, total))
 		time.Sleep(time.Second * 5)

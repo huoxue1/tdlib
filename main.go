@@ -11,6 +11,7 @@ import (
 	"github.com/huoxue1/xdaemon"
 	log "github.com/sirupsen/logrus"
 
+	_ "github.com/huoxue1/tdlib/plugins/param"
 	_ "github.com/huoxue1/tdlib/plugins/task"
 
 	"github.com/huoxue1/tdlib/conf"
@@ -40,6 +41,7 @@ func init() {
 	} else {
 		log.SetLevel(log.DebugLevel)
 	}
+	log.Infoln("程序运行版本: " + conf.GetVersion())
 }
 
 func init() {

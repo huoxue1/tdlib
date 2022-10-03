@@ -31,6 +31,7 @@ type Matcher struct {
 	Rules   []Rule
 	Handler Handler
 	Block   bool
+	Disable bool
 }
 
 func NewPlugin(name string, rules ...Rule) *Matcher {
@@ -42,6 +43,11 @@ func NewPlugin(name string, rules ...Rule) *Matcher {
 
 func (m *Matcher) R(rule Rule) *Matcher {
 	m.Rules = append(m.Rules, rule)
+	return m
+}
+
+func (m *Matcher) Dis() *Matcher {
+	m.Disable = true
 	return m
 }
 
