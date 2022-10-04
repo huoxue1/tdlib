@@ -73,6 +73,8 @@ func InitConfig() {
 		if err != nil {
 			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 				c = generateConfig()
+				log.Infoln("配置文件config.yaml生成成，请重启程序！")
+				os.Exit(1)
 			} else {
 				log.Errorln(err.Error())
 			}

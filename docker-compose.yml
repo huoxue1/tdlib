@@ -1,16 +1,16 @@
 version: "3.5"
 services:
-  xuexi-auto:
-    image: jolanse/study_xxqg:latest
+  tdlib:
+    image: huoxue1/tdlib:latest
     # 容器名
-    container_name: xuexi-auto
+    container_name: tdlib
     environment:
     # 时区
       - TZ=Asia/Shanghai
     # 配置文件路径
     volumes:
-      - ./config:/opt/config
+      - ./tdlib:/tdlib/
     # 映射端口
-    ports:
-      - 8080:8080
+#    ports:
+#      - 8080:8080
     restart: unless-stopped

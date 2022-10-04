@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	runBack()
+
 	log.SetFormatter(&nested.Formatter{
 		FieldsOrder:           nil,
 		TimeStampFormat:       "2006-01-02 15:04:05",
@@ -37,6 +37,7 @@ func init() {
 		CustomCallerFormatter: nil,
 	})
 	conf.InitConfig()
+	runBack()
 	if conf.GetConfig().LogLevel == "info" {
 		log.SetLevel(log.InfoLevel)
 	} else {
