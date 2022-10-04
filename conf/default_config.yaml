@@ -1,0 +1,33 @@
+Container_Wait: 3
+LogEnable: true
+LogLevel: "info"
+QingLong:
+    - Client_ID: r1233
+      Client_Secret: 123
+      url: http://127.0.0.1:5700
+Telegram:
+    Log_En: true
+    TgLost: ''
+    Welcome: 亲爱的,我来啦~~
+    api_hash: 91234
+    api_id: 123455
+    forward_channel_id: ''
+    forward_keyword: []
+    forward_user_id: []
+    forward_user_name: []
+    listen_CH:
+        - -1001765547510
+        - -1001415461569
+        - -1001276799295
+        - -1001591969398
+        - -1001728533280
+        - -1001765547510
+        - -1001718319262
+        - -1001533334185
+        - -1001720740578
+        - -1001798634590
+    log_id: -1001234555
+    master_id:
+        - 123
+    proxy_url: "socks5://127.0.0.1:7891"
+WaitTime: 10

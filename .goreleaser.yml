@@ -47,6 +47,20 @@ builds:
       - -trimpath
     ldflags:
       - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}}
+  - id: docker
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}}
 
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
@@ -78,6 +92,7 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+
 
 #nfpms:
 #  - license: AGPL 3.0
