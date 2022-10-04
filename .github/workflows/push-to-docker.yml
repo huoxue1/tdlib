@@ -64,7 +64,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: docker.pkg.github.com/huoxue1/tdlib/tdlib
+          images: huoxue1/tdlib
           tags: |
             type=raw,value=latest
             type=ref,event=tag
@@ -73,7 +73,6 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v2
         with:
-          registry: ghcr.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       -
@@ -84,7 +83,6 @@ jobs:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/amd64,linux/arm64
-          repository: docker.pkg.github.com/huoxue1/tdlib/tdlib
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
