@@ -9,7 +9,7 @@ services:
       - TZ=Asia/Shanghai
     # 配置文件路径
     volumes:
-      - ./tdlib:/tdlib/
+      - ${pwd}/tdlib:/tdlib/
     # 映射端口
 #    ports:
 #      - 8080:8080

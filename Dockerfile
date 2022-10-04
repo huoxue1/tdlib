@@ -6,13 +6,12 @@ ARG TARGETARCH
 
 RUN  mkdir /tdlib/
 
-COPY conf/task.yaml  /tdlib/task.yaml
+COPY conf/*.yaml  /tdlib/
 
 COPY ./dist/docker_linux_$TARGETARCH*/tdlib /tdlib/tdlib
 
-RUN  chmod -R 777 /tdlib/tdlib
+RUN  chmod -R 777 /tdlib/tdlib && mv /tdlib/default_config.yaml /tdlib/config.yaml
 
-EXPOSE 8080
 
 VOLUME /tdlib
 
