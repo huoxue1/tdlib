@@ -11,6 +11,7 @@ import (
 	"github.com/huoxue1/xdaemon"
 	log "github.com/sirupsen/logrus"
 
+	_ "github.com/huoxue1/tdlib/plugins/nolan"
 	_ "github.com/huoxue1/tdlib/plugins/param"
 	_ "github.com/huoxue1/tdlib/plugins/task"
 

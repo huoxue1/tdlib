@@ -80,7 +80,7 @@ func (m *Matcher) OnCommand(command ...string) *Matcher {
 		text := ctx.Text
 		s := strings.Split(text, " ")
 		for _, s2 := range command {
-			if s[0] == s2 {
+			if s[0] == strings.TrimSpace(s2) {
 				ctx.Args = s[1:]
 				return true
 			}

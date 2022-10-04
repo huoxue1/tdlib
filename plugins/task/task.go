@@ -32,8 +32,10 @@ type Task struct {
 	Script   string
 	Name     string
 	TimeOut  int
-	Disable  bool
-	cronID   map[int]int
+	// 等待时间
+	Wait    int
+	Disable bool
+	cronID  map[int]int
 	// 运行过的变量
 	oldExport []string
 	// 运行的通道
@@ -85,6 +87,7 @@ func addTaskHandler(ctx *lib.Context) {
 		KeyWords:  task.KeyWord,
 		Script:    task.Script,
 		Name:      task.Name,
+		Wait:      1,
 		TimeOut:   0,
 		Disable:   false,
 		cronID:    make(map[int]int, 5),
@@ -196,6 +199,13 @@ func connectHandler(ctx *lib.Context) {
 			KeyWords: s.KeyWord,
 			Script:   s.Script,
 			Name:     s.Name,
+			Wait: func() int {
+				if s.Wait == 0 {
+					return 2
+				} else {
+					return s.Wait
+				}
+			}(),
 			TimeOut: func() int {
 				if s.TimeOut == 0 {
 					return 5
@@ -207,7 +217,7 @@ func connectHandler(ctx *lib.Context) {
 			cronID:    make(map[int]int, 5),
 			ch:        make(chan []map[string]string, 50),
 			total:     0,
-			wait:      s.Wait,
+			wait:      0,
 			oldExport: []string{},
 		}
 		for _, i := range s.Container {
@@ -309,7 +319,7 @@ func runTask(ctx2 *lib.Context, task *Task) {
 				return
 			}
 		}
-		time.Sleep(time.Duration(task.wait) * time.Minute)
+		time.Sleep(time.Duration(task.Wait) * time.Minute)
 	}
 }
 

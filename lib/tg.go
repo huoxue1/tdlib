@@ -192,20 +192,24 @@ func Init(ctx context.Context, appID int, appHash string, proxy string) error {
 		c.MsgID = msg.ID
 		handlerMap.Range(func(key, value any) bool {
 			handle := value.(*Matcher)
-			for _, rule := range handle.Rules {
-				handleRule := func(rule2 Rule) bool {
-					defer func() {
-						err := recover()
-						if err != nil {
-							log.Errorln("处理事件过程异常")
-							log.Errorln(err)
-						}
-					}()
-					return rule2(c)
+			handleRule := func(rules ...Rule) bool {
+				defer func() {
+					err := recover()
+					if err != nil {
+						log.Errorln("处理事件过程异常")
+						log.Errorln(err)
+					}
+				}()
+				for _, r := range rules {
+					b := r(c)
+					if !b {
+						return false
+					}
 				}
-				if !handleRule(rule) {
-					return true
-				}
+				return true
+			}
+			if !handleRule(handle.Rules...) {
+				return true
 			}
 			go func() {
 				defer func() {

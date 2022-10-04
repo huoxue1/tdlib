@@ -55,6 +55,19 @@ func (m *MyDB) Delete(key string) error {
 	return err
 }
 
+func (m *MyDB) LoadDefault(key string, def string) string {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	data, err := m.db.Get([]byte(key), &opt.ReadOptions{
+		DontFillCache: true,
+		Strict:        0,
+	})
+	if err != nil {
+		return def
+	}
+	return string(data)
+}
+
 func (m *MyDB) Load(key string) (string, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
