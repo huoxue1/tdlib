@@ -6,7 +6,7 @@
 
 一键安装命令
 ```shell
-wget -o tdlib_install.py https://raw.githubusercontent.com/huoxue1/tdlib/master/cmd/tdlib_install.py && python3 tdlib_install.py
+wget  https://raw.githubusercontent.com/huoxue1/tdlib/master/cmd/tdlib_install.py && python3 tdlib_install.py
 ```
 ## 命令列表
 [点我查看命令列表](./doc/cmd.md)
