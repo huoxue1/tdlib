@@ -14,5 +14,3 @@ RUN  chmod -R 777 /tdlib/tdlib && mv /tdlib/default_config.yaml /tdlib/config.ya
 
 
 VOLUME /tdlib
-
-CMD cd /tdlib && ./tdlib
