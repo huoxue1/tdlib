@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/huoxue1/tdlib/utils/db"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -61,7 +62,8 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	config := conf.GetConfig()
-	if err := lib.Init(ctx, config.Telegram.ApiId, config.Telegram.ApiHash, config.Telegram.ProxyURL); err != nil {
+	db.InitRedis(config)
+	if err := lib.Init(ctx, config.Telegram.ApiId, config.Telegram.ApiHash, config.Telegram.ProxyURL, config.Telegram.LoginType); err != nil {
 		panic(err)
 	}
 }

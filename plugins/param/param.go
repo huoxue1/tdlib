@@ -2,6 +2,7 @@ package param
 
 import (
 	"fmt"
+	"github.com/huoxue1/tdlib/utils/db"
 	"time"
 
 	"github.com/huoxue1/tdlib/lib"
@@ -13,8 +14,8 @@ func init() {
 			_ = ctx.EditMessage("缺少参数！！")
 			return
 		}
-		db, _ := lib.InitDB()
-		err := db.Store(ctx.Args[0], ctx.Args[1])
+		c := db.GetRedisClient()
+		err := c.Set(ctx.Args[0], ctx.Args[1], 0).Err()
 		if err != nil {
 			_ = ctx.EditMessage("缺少参数！！")
 			return
@@ -29,21 +30,15 @@ func init() {
 			_ = ctx.EditMessage("缺少参数！！")
 			return
 		}
-		db, _ := lib.InitDB()
-		data, _ := db.Load(ctx.Args[0])
-		_ = ctx.EditMessage(fmt.Sprintf("键： %v\n\n值：%v", ctx.Args[0], data))
+		c := db.GetRedisClient()
+		data, err := c.Get(ctx.Args[0]).Result()
+		if err != nil {
+			ctx.EditMessage(fmt.Sprintf("键%v不存在", ctx.Args[0]))
+		} else {
+			_ = ctx.EditMessage(fmt.Sprintf("键： %v\n\n值：%v", ctx.Args[0], data))
+		}
 		time.Sleep(5 * time.Second)
 		ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
 	})
 
-	lib.NewPlugin("param_list", lib.OnlySelf()).OnCommand("tdlib_param_list", "运行参数列表").Handle(func(ctx *lib.Context) {
-		db, _ := lib.InitDB()
-		msg := "参数列表:\n"
-		db.Range(func(key, value string) {
-			msg += key + "\n"
-		})
-		_ = ctx.EditMessage(msg)
-		time.Sleep(5 * time.Second)
-		ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
-	})
 }

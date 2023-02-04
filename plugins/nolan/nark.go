@@ -2,9 +2,9 @@ package nolan
 
 import (
 	"errors"
+	"github.com/huoxue1/tdlib/utils/db"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/imroc/req/v3"
@@ -30,46 +30,24 @@ func init() {
 }
 
 func disableNolan(ctx *lib.Context) {
-	db, _ := lib.InitDB()
-	var enableChannels []string
-	nolanEnableChannel, _ := db.Load("nolan_enable_channel")
-	if nolanEnableChannel == "" {
-		_ = db.Store("nolan_enable_channel", strconv.FormatInt(ctx.Channel.ID, 10))
-		_ = ctx.EditMessage("🈲本群已成功禁用nark登录")
-	} else {
-		for _, channel := range strings.Split(nolanEnableChannel, ",") {
-			if channel != strconv.FormatInt(ctx.Channel.ID, 10) {
-				enableChannels = append(enableChannels, channel)
-			}
-		}
-		_ = db.Store("nolan_enable_channel", strings.Join(enableChannels, ","))
-		_ = ctx.EditMessage("🈲本群已成功禁用nark登录")
-	}
+	c := db.GetRedisClient()
+	_ = c.SRem("nolan_enable_channel", strconv.FormatInt(ctx.Channel.ID, 10))
+	_ = ctx.EditMessage("🈲本群已成功禁用nark登录")
+
 }
 
 func enableNolan(ctx *lib.Context) {
-	db, _ := lib.InitDB()
-	nolanEnableChannel, _ := db.Load("nolan_enable_channel")
-	if nolanEnableChannel == "" {
-		_ = db.Store("nolan_enable_channel", strconv.FormatInt(ctx.Channel.ID, 10))
-		_ = ctx.EditMessage("本群已成功启用nark登录，发送nark_login即可登录")
-	} else {
-		for _, channel := range strings.Split(nolanEnableChannel, ",") {
-			if channel == strconv.FormatInt(ctx.Channel.ID, 10) {
-				_ = ctx.EditMessage("本群已成功启用nark登录，发送nark_login即可登录")
-				return
-			}
-		}
-		nolanEnableChannel += "," + strconv.FormatInt(ctx.Channel.ID, 10)
-		_ = db.Store("nolan_enable_channel", nolanEnableChannel)
-		_ = ctx.EditMessage("本群已成功启用nark登录，发送nark_login即可登录")
-	}
+	c := db.GetRedisClient()
+	_ = c.SAdd("nolan_enable_channel", strconv.FormatInt(ctx.Channel.ID, 10))
+	_ = ctx.EditMessage("🈲本群已成功禁用nark登录")
+	_ = ctx.EditMessage("本群已成功启用nark登录，发送nark_login即可登录")
+
 }
 
 func checkGlobal(ctx *lib.Context) bool {
-	db, _ := lib.InitDB()
+	c := db.GetRedisClient()
 	// 检查是否全局禁用
-	globalNolanEnable, _ := db.Load("global_nolan_enable")
+	globalNolanEnable, _ := c.Get("global_nolan_enable").Result()
 	if globalNolanEnable != "1" {
 		return false
 	}
@@ -77,46 +55,48 @@ func checkGlobal(ctx *lib.Context) bool {
 }
 
 func checkChannelAndUser(ctx *lib.Context) bool {
-	db, _ := lib.InitDB()
+	c := db.GetRedisClient()
+
 	// 检查是否在白名单群内
 	if ctx.MessageType == lib.MESSAGETYPECHANNEL {
-		nolanEnableChannel, _ := db.Load("nolan_enable_channel")
-		if nolanEnableChannel == "" {
+		result, err := c.SMembers("c := db.GetRedisClient()").Result()
+		if err != nil {
 			return false
 		} else {
-			enable := false
-			for _, channel := range strings.Split(nolanEnableChannel, ",") {
-				if channel == strconv.FormatInt(ctx.Channel.ID, 10) {
-					enable = true
+			for _, s := range result {
+				if s == strconv.FormatInt(ctx.Channel.ID, 10) {
+					return true
 				}
-			}
-			if !enable {
-				return false
 			}
 		}
 	}
 
 	// 检查是否属于黑名单
-	nolanDisableUser, _ := db.Load("nolan_disable_user")
-	if nolanDisableUser == "" {
-		return true
-	} else {
-		for _, user := range strings.Split(nolanDisableUser, ",") {
-			if user == strconv.FormatInt(ctx.User.ID, 10) {
-				return false
-			}
-		}
-	}
-	return true
+	//nolanDisableUser, _ := db.Load("nolan_disable_user")
+	//if nolanDisableUser == "" {
+	//	return true
+	//} else {
+	//	for _, user := range strings.Split(nolanDisableUser, ",") {
+	//		if user == strconv.FormatInt(ctx.User.ID, 10) {
+	//			return false
+	//		}
+	//	}
+	//}
+	return false
 }
 
 func nolan(ctx *lib.Context) {
-	db, _ := lib.InitDB()
-	nolanApi, _ := db.Load("nolan_api")
-	if nolanApi == "" {
+	c := db.GetRedisClient()
+	nolanApi, err := c.Get("nolan_api").Result()
+	if err != nil {
 		_ = ctx.SendText("nolan_api未设置！", 0)
+		return
 	}
-	err := ctx.SendText(db.LoadDefault("nolan_target", "nark为你服务，请输入11位手机号： "), ctx.MsgID)
+	s := c.Get("nolan_target").String()
+	if s == "" {
+		s = "nark为你服务，请输入11位手机号： "
+	}
+	err = ctx.SendText(s, ctx.MsgID)
 	if err != nil {
 		return
 	}

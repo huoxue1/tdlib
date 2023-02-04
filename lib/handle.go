@@ -93,6 +93,7 @@ func (m *Matcher) OnCommand(command ...string) *Matcher {
 func (m *Matcher) OnRegex(regexStr string) *Matcher {
 	m.Rules = append(m.Rules, func(ctx *Context) bool {
 		text := ctx.Text
+		text = strings.ReplaceAll(text, "\n", "")
 		r, err := regexp.Compile(regexStr)
 		if err != nil {
 			log.Errorln("错误的正则表达式" + err.Error())

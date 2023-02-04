@@ -5,6 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-redis/redis"
+	"github.com/gotd/td/telegram/auth/qrlogin"
+	"github.com/huoxue1/tdlib/utils/db"
+	"github.com/skip2/go-qrcode"
 	"net"
 	"net/url"
 	"os"
@@ -13,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	qrcodeTerminal "github.com/Baozisoftware/qrcode-terminal-go"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/telegram/auth"
 	"github.com/gotd/td/telegram/dcs"
@@ -74,9 +79,10 @@ type Config struct {
 	AppHash string
 
 	ProxyAddr string
+	LoginType string
 }
 
-func Init(ctx context.Context, appID int, appHash string, proxy string) error {
+func Init(ctx context.Context, appID int, appHash string, proxy string, loginType string) error {
 
 	handlerMap.Range(func(key, value any) bool {
 		log.Infoln("已加载插件 ==》 " + key.(string))
@@ -233,18 +239,13 @@ func Init(ctx context.Context, appID int, appHash string, proxy string) error {
 		AppID:     appID,
 		AppHash:   appHash,
 		ProxyAddr: proxy,
+		LoginType: loginType,
 	}, gaps)
 	return nil
 }
 
 func ConnectTelegram(ctx context.Context, config *Config, manager *updates.Manager) {
 
-	db, err := InitDB()
-	if err != nil {
-		log.Errorln("打开db文件错误" + err.Error())
-		return
-	}
-	defer db.Close()
 	proxyUrl, err := url.Parse(config.ProxyAddr)
 	if err != nil {
 		log.Errorln("解析代理地址失败")
@@ -261,8 +262,8 @@ func ConnectTelegram(ctx context.Context, config *Config, manager *updates.Manag
 	})
 	l, _ := zap.NewDevelopment(zap.IncreaseLevel(zapcore.InfoLevel), zap.AddStacktrace(zapcore.FatalLevel))
 	client := telegram.NewClient(config.AppID, config.AppHash, telegram.Options{
-		SessionStorage: &MyStore{Db: db},
-		DC:             2,
+		SessionStorage: &MyStore{Db: db.GetRedisClient()},
+		DC:             5,
 		DialTimeout:    time.Minute * 5,
 		Logger:         l,
 		Resolver: dcs.Plain(dcs.PlainOptions{
@@ -274,17 +275,48 @@ func ConnectTelegram(ctx context.Context, config *Config, manager *updates.Manag
 		UpdateHandler: manager,
 	})
 	err = client.Run(ctx, func(ctx context.Context) error {
-		err := client.Auth().IfNecessary(ctx, auth.NewFlow(&termAuth{}, auth.SendCodeOptions{}))
+		status, err := client.Auth().Status(ctx)
 		if err != nil {
-			log.Errorln("鉴权失败" + err.Error())
+			log.Errorln("获取status失败")
+			log.Errorln(err.Error())
 			return err
 		}
+		if !status.Authorized {
+			if config.LoginType == "qrcode" {
+				loginIn := make(chan struct{}, 1)
+				go func() {
+					log.Infoln("扫码后请按下回车！！")
+					_, _ = fmt.Scanln()
+					loginIn <- struct{}{}
+				}()
+				_, _ = qrlogin.NewQR(client.API(), config.AppID, config.AppHash, qrlogin.Options{}).Auth(ctx, loginIn, func(ctx context.Context, token qrlogin.Token) error {
+					log.Infoln("二维码已生成到qr.png")
+					_ = qrcode.WriteFile(token.URL(), qrcode.Medium, 255, "qr.png")
+					qrcodeTerminal.New().Get(token.URL()).Print()
+					return nil
+				})
+			} else {
+				err := client.Auth().IfNecessary(ctx, auth.NewFlow(&termAuth{}, auth.SendCodeOptions{}))
+				if err != nil {
+					log.Errorln("鉴权失败" + err.Error())
+					return err
+				}
+			}
+
+		}
+		status, err = client.Auth().Status(ctx)
+		if err != nil {
+			log.Errorln("获取status失败")
+			log.Errorln(err.Error())
+			return err
+		}
+		log.Infoln(status)
 		user, err := client.Self(ctx)
 		if err != nil {
 			log.Errorln(err.Error())
 			return err
 		}
-		_ = db.Store("self_id", strconv.FormatInt(user.ID, 10))
+		db.GetRedisClient().Set("self_id", strconv.FormatInt(user.ID, 10), 0)
 		log.Infoln(fmt.Sprintf("%v已登陆", user.Username))
 		// Notify update manager about authentication.
 
@@ -319,18 +351,19 @@ func ConnectTelegram(ctx context.Context, config *Config, manager *updates.Manag
 }
 
 type MyStore struct {
-	Db *MyDB
+	Db *redis.Client
 }
 
 func (m *MyStore) LoadSession(ctx context.Context) ([]byte, error) {
-	data, err := m.Db.Load("tg_session")
+	result, err := m.Db.Get("tg_session").Result()
 	if err != nil {
 		return []byte(""), nil
 	}
-	return []byte(data), err
+	return []byte(result), nil
 }
 
 func (m *MyStore) StoreSession(ctx context.Context, data []byte) error {
-	return m.Db.Store("tg_session", regexp.MustCompile(`(,"ReactionsDefault":\{.*?})`).ReplaceAllString(string(data), ""))
+	set := m.Db.Set("tg_session", regexp.MustCompile(`(,"ReactionsDefault":\{.*?})`).ReplaceAllString(string(data), ""), 0)
+	return set.Err()
 	//return m.Db.Store("tg_session", strings.ReplaceAll(string(data), `,"ReactionsDefault":{"Emoticon":"👍"}`, ""))
 }

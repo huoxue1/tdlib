@@ -3,14 +3,14 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-redis/redis"
+	"github.com/huoxue1/tdlib/utils/db"
 	"strconv"
 	"time"
 
 	"github.com/imroc/req/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
-
-	"github.com/huoxue1/tdlib/lib"
 )
 
 type Ql struct {
@@ -20,7 +20,7 @@ type Ql struct {
 
 	token   string
 	c       *req.Client
-	storage *lib.MyDB
+	storage *redis.Client
 	header  map[string]string
 }
 
@@ -30,7 +30,7 @@ type Cron struct {
 	Command   string `json:"command"`
 	Schedule  string `json:"schedule"`
 	Timestamp string `json:"timestamp"`
-	Saved     bool   `json:"saved"`
+	//Saved     int    `json:"saved"`
 	// 1代表未运行，0代表运行中
 	Status            int           `json:"status"`
 	IsSystem          int           `json:"isSystem"`
@@ -41,8 +41,8 @@ type Cron struct {
 	Labels            []interface{} `json:"labels"`
 	LastRunningTime   int           `json:"last_running_time"`
 	LastExecutionTime int           `json:"last_execution_time"`
-	CreatedAt         time.Time     `json:"createdAt"`
-	UpdatedAt         time.Time     `json:"updatedAt"`
+	//CreatedAt         time.Time     `json:"createdAt"`
+	//UpdatedAt         time.Time     `json:"updatedAt"`
 }
 
 type Env struct {
@@ -59,16 +59,15 @@ type Env struct {
 
 func InitQl(api, clientID, clientSecret string) *Ql {
 	q := new(Ql)
-	db, _ := lib.InitDB()
-	q.storage = db
+	q.storage = db.GetRedisClient()
 	q.c = req.C()
 	q.Api = api
 	q.ClientID = clientID
 	q.ClientSecret = clientSecret
 
-	token, err := q.storage.Load("ql_" + api)
+	token, err := q.storage.Get("ql_" + api).Result()
 	if err != nil {
-		log.Errorln("从磁盘读取token失败" + err.Error())
+		log.Errorln("从redis读取token失败" + err.Error())
 		q.token = q.getToken()
 		err = nil
 	} else {
@@ -87,7 +86,7 @@ func InitQl(api, clientID, clientSecret string) *Ql {
 			return nil
 		}
 	}
-	err = q.storage.Store("ql_"+api, q.token)
+	err = q.storage.Set("ql_"+api, q.token, time.Hour*24*28).Err()
 	if err != nil {
 		log.Errorln("store token faild," + err.Error())
 		return q

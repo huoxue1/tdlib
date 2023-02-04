@@ -1,7 +1,9 @@
 package task
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/huoxue1/tdlib/utils/db"
 	"regexp"
 	"strconv"
 	"strings"
@@ -115,13 +117,15 @@ func enableTaskHandler(ctx *lib.Context) {
 
 	log.Infoln("即将启用task" + task.Name)
 	task.Disable = false
-	db, _ := lib.InitDB()
-	_ = db.Delete(task.Name + "_disable")
+	c := db.GetRedisClient()
+	err = c.SRem("task_disable", task.Name).Err()
+	if err != nil {
+		return
+	}
 	_ = ctx.EditMessage("已成功启用任务" + task.Name)
 	time.Sleep(10 * time.Second)
 	ctx.DeleteMsg(ctx.Message.Flags, ctx.Channel.ID, ctx.MsgID)
 	_ = ctx.EditMessage("enable")
-
 }
 
 func disableTaskHandler(ctx *lib.Context) {
@@ -136,8 +140,8 @@ func disableTaskHandler(ctx *lib.Context) {
 
 	log.Infoln("即将禁用task" + task.Name)
 	task.Disable = true
-	db, _ := lib.InitDB()
-	err = db.Store(task.Name+"_disable", "true")
+	c := db.GetRedisClient()
+	err = c.SAdd("task_disable", task.Name).Err()
 	if err != nil {
 		return
 	}
@@ -192,7 +196,7 @@ func connectHandler(ctx *lib.Context) {
 		}
 		log.Infoln(fmt.Sprintf("初始化青龙%v成功", s.Url))
 	}
-	db, _ := lib.InitDB()
+	c := db.GetRedisClient()
 	for _, s := range conf.JsConfig {
 		t := &Task{
 			Env:      s.Env,
@@ -248,8 +252,8 @@ func connectHandler(ctx *lib.Context) {
 		}
 		tasks = append(tasks, t)
 
-		load, _ := db.Load(t.Name + "_disable")
-		if load != "" {
+		isMember, _ := c.SIsMember("task_disable", t.Name).Result()
+		if isMember {
 			t.Disable = true
 			log.Warningln("已禁用任务 " + t.Name)
 		}
@@ -264,8 +268,15 @@ func connectHandler(ctx *lib.Context) {
  */
 func runTask(ctx2 *lib.Context, task *Task) {
 	conf := conf2.GetConfig()
+	var exports []map[string]string
 	for {
-		exports := <-task.ch
+		c := db.GetRedisClient()
+		result, err := c.BRPop(0, task.Name+"_queue").Result()
+		if err != nil {
+			time.Sleep(time.Minute)
+			continue
+		}
+		_ = json.Unmarshal([]byte(result[1]), &exports)
 		task.wait--
 		log.Infoln("开始执行任务" + task.Name)
 
@@ -290,6 +301,13 @@ func runTask(ctx2 *lib.Context, task *Task) {
 			c := make(chan int, 1)
 			id := id
 			go func() {
+				defer func() {
+					err := recover()
+					if err != nil {
+						log.Errorln(err)
+						c <- 1
+					}
+				}()
 				for true {
 					cron, err := ql.QL.GetCron(id)
 					if err != nil {
@@ -392,7 +410,10 @@ func exportHandler(ctx *lib.Context) {
 	matchTask.total++
 	matchTask.wait++
 	matchTask.oldExport = append(matchTask.oldExport, exports[0]["value"])
-	matchTask.ch <- exports
+	//matchTask.ch <- exports
+	c := db.GetRedisClient()
+	data, _ := json.Marshal(exports)
+	c.LPush(matchTask.Name+"_queue", string(data))
 	msg += "检测到任务" + matchTask.Name
 	msg += fmt.Sprintf("\n等待中：%d,总共运行：%d", matchTask.wait, matchTask.total)
 	err := ctx.SendChannelMsg(config.Telegram.LogId, msg, 0)

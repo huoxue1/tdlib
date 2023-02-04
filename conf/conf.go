@@ -18,9 +18,15 @@ type QingLongConf struct {
 	Url          string `json:"url" mapstructure:"url" yaml:"url"`
 }
 
+type Redis struct {
+	Address  string `json:"address" yaml:"address" mapstructure:"address"`
+	Password string `json:"password" yaml:"password" mapstructure:"password"`
+}
+
 type Config struct {
 	LogLevel string         `json:"LogLevel" mapstructure:"LogLevel" yaml:"LogLevel"`
 	QingLong []QingLongConf `json:"QingLong" mapstructure:"QingLong" yaml:"QingLong"`
+	Redis    *Redis         `json:"redis" yaml:"redis" mapstructure:"redis"`
 	Telegram struct {
 		LogEn            bool     `json:"Log_En" mapstructure:"Log_En" yaml:"Log_En"`
 		TgLost           string   `json:"TgLost" mapstructure:"TgLost" yaml:"TgLost"`
@@ -35,6 +41,7 @@ type Config struct {
 		LogId            int64    `json:"log_id" mapstructure:"log_id" yaml:"log_id"`
 		MasterId         []int64  `json:"master_id" mapstructure:"master_id" yaml:"master_id"`
 		ProxyURL         string   `json:"proxy_url" mapstructure:"proxy_url" yaml:"proxy_url"`
+		LoginType        string   `json:"login_type" yaml:"login_type" mapstructure:"login_type"`
 	} `json:"Telegram" mapstructure:"Telegram" yaml:"Telegram"`
 	WaitTime  int           `json:"WaitTime" mapstructure:"WaitTime" yaml:"WaitTime"`
 	DownProxy string        `json:"down_proxy" mapstructure:"down_proxy" yaml:"down_proxy"`
