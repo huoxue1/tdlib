@@ -1,7 +1,6 @@
 package task
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/huoxue1/tdlib/utils/db"
 	"regexp"
@@ -49,7 +48,9 @@ type Task struct {
 }
 
 func init() {
-	lib.OnConnect(connectHandler)
+	lib.OnConnect(func(ctx *lib.Context) {
+		go connectHandler(ctx)
+	})
 	lib.NewPlugin("export", lib.OnlyChannels(conf2.GetConfig().Telegram.ListenCH...)).OnRegex(`export\s(.*?)="(.*?)"`).Handle(exportHandler)
 	lib.NewPlugin("check_task", lib.OnlySelf()).OnCommand("check_task", "检查任务").Handle(checkTaskHandler)
 	lib.NewPlugin("disable_task", lib.OnlySelf()).OnCommand("disable_task", "禁用任务").Handle(disableTaskHandler)
@@ -268,15 +269,8 @@ func connectHandler(ctx *lib.Context) {
  */
 func runTask(ctx2 *lib.Context, task *Task) {
 	conf := conf2.GetConfig()
-	var exports []map[string]string
 	for {
-		c := db.GetRedisClient()
-		result, err := c.BRPop(0, task.Name+"_queue").Result()
-		if err != nil {
-			time.Sleep(time.Minute)
-			continue
-		}
-		_ = json.Unmarshal([]byte(result[1]), &exports)
+		exports := <-task.ch
 		task.wait--
 		log.Infoln("开始执行任务" + task.Name)
 
@@ -410,10 +404,7 @@ func exportHandler(ctx *lib.Context) {
 	matchTask.total++
 	matchTask.wait++
 	matchTask.oldExport = append(matchTask.oldExport, exports[0]["value"])
-	//matchTask.ch <- exports
-	c := db.GetRedisClient()
-	data, _ := json.Marshal(exports)
-	c.LPush(matchTask.Name+"_queue", string(data))
+	matchTask.ch <- exports
 	msg += "检测到任务" + matchTask.Name
 	msg += fmt.Sprintf("\n等待中：%d,总共运行：%d", matchTask.wait, matchTask.total)
 	err := ctx.SendChannelMsg(config.Telegram.LogId, msg, 0)

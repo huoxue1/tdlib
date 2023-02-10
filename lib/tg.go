@@ -103,6 +103,10 @@ func Init(ctx context.Context, appID int, appHash string, proxy string, loginTyp
 
 	dispatcher.OnNewChannelMessage(func(ctx context.Context, e tg.Entities, update *tg.UpdateNewChannelMessage) error {
 
+		defer func() {
+			_ = recover()
+		}()
+
 		var ch *tg.Channel
 		var user *tg.User
 
@@ -172,10 +176,14 @@ func Init(ctx context.Context, appID int, appHash string, proxy string, loginTyp
 			return false
 		})
 
-		log.Infoln("收到消息" + msg.Message)
+		log.Debugln("收到消息" + msg.Message)
 		return nil
 	})
 	dispatcher.OnNewMessage(func(ctx context.Context, e tg.Entities, update *tg.UpdateNewMessage) error {
+		defer func() {
+			_ = recover()
+		}()
+
 		client := ctx.Value("client").(*telegram.Client)
 
 		msg, ok := update.Message.(*tg.Message)
@@ -231,7 +239,7 @@ func Init(ctx context.Context, appID int, appHash string, proxy string, loginTyp
 			return false
 		})
 
-		log.Infoln("收到消息" + msg.Message)
+		log.Debugln("收到消息" + msg.Message)
 		return nil
 	})
 
