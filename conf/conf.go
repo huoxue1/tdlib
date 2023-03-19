@@ -21,12 +21,19 @@ type QingLongConf struct {
 type Redis struct {
 	Address  string `json:"address" yaml:"address" mapstructure:"address"`
 	Password string `json:"password" yaml:"password" mapstructure:"password"`
+	Db       int    `json:"db" yaml:"db" mapstructure:"db"`
 }
 
 type Config struct {
 	LogLevel string         `json:"LogLevel" mapstructure:"LogLevel" yaml:"LogLevel"`
 	QingLong []QingLongConf `json:"QingLong" mapstructure:"QingLong" yaml:"QingLong"`
-	Redis    *Redis         `json:"redis" yaml:"redis" mapstructure:"redis"`
+	Cache    struct {
+		CacheType string `json:"cache_type" yaml:"cache_type" mapstructure:"cacheType"`
+		Redis     *Redis `json:"redis" yaml:"redis" mapstructure:"redis"`
+		Nustdb    struct {
+			Dir string `json:"dir" yaml:"dir" mapstructure:"dir"`
+		} `json:"nustdb" yaml:"nustdb" mapstructure:"nustdb"`
+	} `json:"cache" yaml:"cache" mapstructure:"cache"`
 	Telegram struct {
 		LogEn            bool     `json:"Log_En" mapstructure:"Log_En" yaml:"Log_En"`
 		TgLost           string   `json:"TgLost" mapstructure:"TgLost" yaml:"TgLost"`

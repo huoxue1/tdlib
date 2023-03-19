@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/huoxue1/tdlib/utils/db"
 	"os"
 	"os/exec"
@@ -62,7 +63,13 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	config := conf.GetConfig()
-	db.InitRedis(config)
+	if err := db.InitCache(config); err != nil {
+		panic(err)
+	}
+	db.GetCache().ForEach(func(key, value string) bool {
+		log.Infoln(fmt.Sprintf("key: %s , value: %s", key, value))
+		return true
+	})
 	if err := lib.Init(ctx, config.Telegram.ApiId, config.Telegram.ApiHash, config.Telegram.ProxyURL, config.Telegram.LoginType); err != nil {
 		panic(err)
 	}

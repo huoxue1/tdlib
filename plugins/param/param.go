@@ -14,8 +14,8 @@ func init() {
 			_ = ctx.EditMessage("缺少参数！！")
 			return
 		}
-		c := db.GetRedisClient()
-		err := c.Set(ctx.Args[0], ctx.Args[1], 0).Err()
+		c := db.GetCache()
+		err := c.Set(ctx.Args[0], ctx.Args[1])
 		if err != nil {
 			_ = ctx.EditMessage("缺少参数！！")
 			return
@@ -30,9 +30,9 @@ func init() {
 			_ = ctx.EditMessage("缺少参数！！")
 			return
 		}
-		c := db.GetRedisClient()
-		data, err := c.Get(ctx.Args[0]).Result()
-		if err != nil {
+		c := db.GetCache()
+		data := c.Get(ctx.Args[0])
+		if data == "" {
 			ctx.EditMessage(fmt.Sprintf("键%v不存在", ctx.Args[0]))
 		} else {
 			_ = ctx.EditMessage(fmt.Sprintf("键： %v\n\n值：%v", ctx.Args[0], data))

@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis"
 	"github.com/gotd/td/telegram/auth/qrlogin"
 	"github.com/huoxue1/tdlib/utils/db"
 	"github.com/skip2/go-qrcode"
@@ -270,7 +269,7 @@ func ConnectTelegram(ctx context.Context, config *Config, manager *updates.Manag
 	})
 	l, _ := zap.NewDevelopment(zap.IncreaseLevel(zapcore.InfoLevel), zap.AddStacktrace(zapcore.FatalLevel))
 	client := telegram.NewClient(config.AppID, config.AppHash, telegram.Options{
-		SessionStorage: &MyStore{Db: db.GetRedisClient()},
+		SessionStorage: &MyStore{Db: db.GetCache()},
 		DC:             5,
 		DialTimeout:    time.Minute * 5,
 		Logger:         l,
@@ -324,7 +323,7 @@ func ConnectTelegram(ctx context.Context, config *Config, manager *updates.Manag
 			log.Errorln(err.Error())
 			return err
 		}
-		db.GetRedisClient().Set("self_id", strconv.FormatInt(user.ID, 10), 0)
+		db.GetCache().Set("self_id", strconv.FormatInt(user.ID, 10))
 		log.Infoln(fmt.Sprintf("%v已登陆", user.Username))
 		// Notify update manager about authentication.
 
@@ -359,19 +358,19 @@ func ConnectTelegram(ctx context.Context, config *Config, manager *updates.Manag
 }
 
 type MyStore struct {
-	Db *redis.Client
+	Db db.CacheClient
 }
 
 func (m *MyStore) LoadSession(ctx context.Context) ([]byte, error) {
-	result, err := m.Db.Get("tg_session").Result()
-	if err != nil {
+	result := m.Db.Get("tg_session")
+	if result == "" {
 		return []byte(""), nil
 	}
 	return []byte(result), nil
 }
 
 func (m *MyStore) StoreSession(ctx context.Context, data []byte) error {
-	set := m.Db.Set("tg_session", regexp.MustCompile(`(,"ReactionsDefault":\{.*?})`).ReplaceAllString(string(data), ""), 0)
-	return set.Err()
+	err := m.Db.Set("tg_session", regexp.MustCompile(`(,"ReactionsDefault":\{.*?})`).ReplaceAllString(string(data), ""))
+	return err
 	//return m.Db.Store("tg_session", strings.ReplaceAll(string(data), `,"ReactionsDefault":{"Emoticon":"👍"}`, ""))
 }

@@ -118,8 +118,8 @@ func enableTaskHandler(ctx *lib.Context) {
 
 	log.Infoln("即将启用task" + task.Name)
 	task.Disable = false
-	c := db.GetRedisClient()
-	err = c.SRem("task_disable", task.Name).Err()
+	c := db.GetCache()
+	err = c.SetDel("task_disable", task.Name)
 	if err != nil {
 		return
 	}
@@ -141,8 +141,8 @@ func disableTaskHandler(ctx *lib.Context) {
 
 	log.Infoln("即将禁用task" + task.Name)
 	task.Disable = true
-	c := db.GetRedisClient()
-	err = c.SAdd("task_disable", task.Name).Err()
+	c := db.GetCache()
+	err = c.SetAdd("task_disable", task.Name)
 	if err != nil {
 		return
 	}
@@ -197,7 +197,7 @@ func connectHandler(ctx *lib.Context) {
 		}
 		log.Infoln(fmt.Sprintf("初始化青龙%v成功", s.Url))
 	}
-	c := db.GetRedisClient()
+	c := db.GetCache()
 	for _, s := range conf.JsConfig {
 		t := &Task{
 			Env:      s.Env,
@@ -253,7 +253,7 @@ func connectHandler(ctx *lib.Context) {
 		}
 		tasks = append(tasks, t)
 
-		isMember, _ := c.SIsMember("task_disable", t.Name).Result()
+		isMember := c.SetIsMem("task_disable", t.Name)
 		if isMember {
 			t.Disable = true
 			log.Warningln("已禁用任务 " + t.Name)

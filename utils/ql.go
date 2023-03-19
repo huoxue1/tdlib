@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-redis/redis"
 	"github.com/huoxue1/tdlib/utils/db"
 	"strconv"
 	"time"
@@ -20,7 +19,7 @@ type Ql struct {
 
 	token   string
 	c       *req.Client
-	storage *redis.Client
+	storage db.CacheClient
 	header  map[string]string
 }
 
@@ -59,23 +58,18 @@ type Env struct {
 
 func InitQl(api, clientID, clientSecret string) *Ql {
 	q := new(Ql)
-	q.storage = db.GetRedisClient()
+	q.storage = db.GetCache()
 	q.c = req.C()
 	q.Api = api
 	q.ClientID = clientID
 	q.ClientSecret = clientSecret
 
-	token, err := q.storage.Get("ql_" + api).Result()
-	if err != nil {
-		log.Errorln("从redis读取token失败" + err.Error())
+	token := q.storage.Get("ql_" + api)
+	if token == "" {
+		log.Errorln("从cache读取token失败")
 		q.token = q.getToken()
-		err = nil
 	} else {
-		if string(token) == "" {
-			q.token = q.getToken()
-		} else {
-			q.token = token
-		}
+		q.token = token
 	}
 	q.c.SetCommonHeader("Authorization", "Bearer "+q.token)
 	if !q.checkToken() {
@@ -86,7 +80,7 @@ func InitQl(api, clientID, clientSecret string) *Ql {
 			return nil
 		}
 	}
-	err = q.storage.Set("ql_"+api, q.token, time.Hour*24*28).Err()
+	err := q.storage.SetTtl("ql_"+api, q.token, time.Hour*24*28)
 	if err != nil {
 		log.Errorln("store token faild," + err.Error())
 		return q
