@@ -70,7 +70,12 @@ type TaskConfig struct {
 var (
 	config  *Config
 	Version = "UNKNOWN"
+	Commit  = "UNKONOW"
 )
+
+func GetCommit() string {
+	return Commit
+}
 
 func GetVersion() string {
 	return Version

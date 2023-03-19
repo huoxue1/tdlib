@@ -45,7 +45,7 @@ func init() {
 	} else {
 		log.SetLevel(log.DebugLevel)
 	}
-	log.Infoln("程序运行版本: " + conf.GetVersion())
+	log.Infoln("程序运行版本: " + conf.GetVersion() + ",commit: " + conf.GetCommit())
 }
 
 func init() {

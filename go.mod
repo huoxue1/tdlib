@@ -13,7 +13,7 @@ require (
 	github.com/imroc/req/v3 v3.33.1
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/klauspost/compress v1.15.9
-	github.com/nutsdb/nutsdb v0.12.0
+	github.com/nutsdb/nutsdb v0.12.1-0.20230316125039-c50897ce54db
 	github.com/sirupsen/logrus v1.9.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/viper v1.13.0

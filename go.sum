@@ -223,6 +223,8 @@ github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lN
 github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9Gz0M=
 github.com/nutsdb/nutsdb v0.12.0 h1:6P7EJat2PyVhRu51KMmFu5N851UupfpPBHAqctRm3/4=
 github.com/nutsdb/nutsdb v0.12.0/go.mod h1:FSztXVhUSK5YmedmZQ6m37cU/KpVbGaezUEmUBP8DEo=
+github.com/nutsdb/nutsdb v0.12.1-0.20230316125039-c50897ce54db h1:6Lk/XPyGPEWT/CnARJHkmt+LXKIXgivmPUl00oe5SIM=
+github.com/nutsdb/nutsdb v0.12.1-0.20230316125039-c50897ce54db/go.mod h1:FSztXVhUSK5YmedmZQ6m37cU/KpVbGaezUEmUBP8DEo=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=

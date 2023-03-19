@@ -30,7 +30,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}}
+      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}} -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Commit}}
   - id: win
     env:
       - CGO_ENABLED=0
@@ -46,7 +46,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}}
+      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}} -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Commit}}
   - id: docker
     env:
       - CGO_ENABLED=0
@@ -60,7 +60,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}}
+      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}} -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Commit}}
 
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
