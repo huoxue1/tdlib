@@ -61,8 +61,6 @@ builds:
       - -trimpath
     ldflags:
       - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}} -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Commit}}
-
-
   - id: ci
     env:
       - CGO_ENABLED=0
