@@ -60,8 +60,9 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version}} -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Commit}}
-  - id: ci
+      - -s -w -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Version }} -X github.com/huoxue1/tdlib/conf.VERSION=v{{.Commit }}
+  -
+    id: ci
     env:
       - CGO_ENABLED=0
       - GO111MODULE=on
@@ -84,7 +85,7 @@ builds:
       - goos: windows
         goarch: arm
     mod_timestamp: "{{ .CommitTimestamp }}"
-    binary: {{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}
+    binary: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
     flags:
       - -trimpath
     ldflags:
