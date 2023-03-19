@@ -1,6 +1,6 @@
 module github.com/huoxue1/tdlib
 
-go 1.18
+go 1.20
 
 require (
 	github.com/Baozisoftware/qrcode-terminal-go v0.0.0-20170407111555-c0650d8dff0f
